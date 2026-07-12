@@ -63,13 +63,11 @@ De två första är absoluta krav och får aldrig kompromissas. De tre sista lö
 
 För varje spelvecka: en lista av flighter, där varje flight visar vilka spelare som ingår, samt (för spårbarhet) flight-summan av handicap.
 
-## 6. Öppna frågor / edge cases
+## 6. Beslutade edge cases
 
-Dessa behöver beslutas innan eller under implementation:
-
-- **Ojämnt antal anmälda**: Om antalet anmälda spelare inte är jämnt delbart med 3, hur ska resten hanteras? (T.ex. en flight med 2 eller 4 spelare istället.)
-- **Udda antal golfbils-flaggade i en flight**: Om en flight har ett udda antal spelare som behöver golfbil (t.ex. 1 eller 3 av 3), går det inte att para ihop exakt 2 och 2. Hur ska detta hanteras — tillåts en spelare köra ensam, eller ska lottningen försöka omfördela mellan flighter?
-- **Omöjlig flight pga. handicaptak**: Om de kvarvarande ihoplottade spelarna mot slutet av processen har för hög sammanlagd handicap för att bilda en giltig flight, vad ska hända? (T.ex. manuell justering, eller att programmet flaggar veckan som olösbar och ber om admin-ingrepp.)
+- **Ojämnt antal anmälda**: Om antalet anmälda inte är jämnt delbart med 3 skapas en flight med 4 spelare (om resten är 1) eller en flight med 2 spelare (om resten är 2), övriga flighter har 3 spelare.
+- **Udda antal golfbils-flaggade i en flight**: Bästa möjliga parning — lottningen försöker minimera antalet flighter med ett udda antal golfbils-flaggade spelare, men en ensam spelare utan bilpartner är tillåtet om det inte går att undvika.
+- **Omöjlig flight pga. handicaptak**: Lottningen sparas aldrig med en flight som bryter mot handicaptaket eller har ett gift par ihop. Om ingen giltig lösning hittas automatiskt flaggas det tydligt i gränssnittet, och admin får byta plats på spelare manuellt (tryck-för-att-byta-plats) tills det är giltigt.
 
 ## 7. Icke-mål (för denna fas)
 

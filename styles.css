@@ -40,6 +40,10 @@
   box-sizing: border-box;
 }
 
+[hidden] {
+  display: none !important;
+}
+
 html, body {
   height: 100%;
 }
@@ -214,10 +218,6 @@ main {
   border: 1px solid var(--danger);
 }
 
-.sheet-backdrop[hidden] {
-  display: none;
-}
-
 .sheet-backdrop {
   position: fixed;
   inset: 0;
@@ -307,4 +307,292 @@ main {
   display: flex;
   gap: 10px;
   margin-left: auto;
+}
+
+/* Tabs */
+
+.tabs {
+  display: flex;
+  gap: 8px;
+  padding: 10px 16px;
+  max-width: 720px;
+  margin: 0 auto;
+}
+
+.tab-btn {
+  appearance: none;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text-secondary);
+  font-size: 15px;
+  font-weight: 600;
+  padding: 10px 16px;
+  border-radius: 999px;
+  cursor: pointer;
+  min-height: 44px;
+}
+
+.tab-btn.active {
+  background: var(--accent);
+  color: var(--accent-text);
+  border-color: var(--accent);
+}
+
+.tab-panel {
+  display: block;
+}
+
+/* Lottery controls */
+
+.lottery-controls {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 16px;
+  margin-bottom: 20px;
+}
+
+.attendance-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin: 20px 0 10px;
+  font-size: 15px;
+  color: var(--text-secondary);
+}
+
+.attendance-actions {
+  display: flex;
+  gap: 14px;
+}
+
+.btn-link {
+  appearance: none;
+  border: none;
+  background: none;
+  color: var(--accent);
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 6px 0;
+}
+
+.attendance-list {
+  list-style: none;
+  margin: 0 0 16px;
+  padding: 0;
+  max-height: 340px;
+  overflow-y: auto;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+}
+
+.attendance-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  min-height: 44px;
+  border-bottom: 1px solid var(--border);
+}
+
+.attendance-item:last-child {
+  border-bottom: none;
+}
+
+.attendance-item input[type="checkbox"] {
+  width: 22px;
+  height: 22px;
+  flex-shrink: 0;
+}
+
+.attendance-name {
+  font-size: 16px;
+  flex: 1;
+}
+
+.attendance-hcp {
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+
+.btn-block {
+  width: 100%;
+}
+
+/* Lottery result */
+
+.lottery-result {
+  margin-bottom: 32px;
+}
+
+.lottery-banner {
+  padding: 12px 14px;
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 600;
+  margin-bottom: 14px;
+  background: var(--badge-slow-bg);
+  color: var(--badge-slow-text);
+}
+
+.flight-container {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 12px;
+}
+
+.flight-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 12px 14px;
+}
+
+.flight-header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+
+.flight-title {
+  font-size: 15px;
+  font-weight: 700;
+}
+
+.flight-size-note {
+  font-size: 12px;
+  color: var(--text-secondary);
+  font-weight: 400;
+}
+
+.flight-hcp {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text-secondary);
+}
+
+.flight-hcp.invalid {
+  color: var(--danger);
+}
+
+.flight-players {
+  list-style: none;
+  margin: 0 0 8px;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.flight-player-chip {
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 8px 10px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  cursor: pointer;
+  font-size: 14px;
+  min-height: 44px;
+}
+
+.flight-player-chip.selected {
+  border-color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 12%, var(--surface));
+}
+
+.flight-player-chip.invalid-pair {
+  border-color: var(--danger);
+  background: color-mix(in srgb, var(--danger) 10%, var(--surface));
+}
+
+.flight-player-name {
+  font-weight: 600;
+}
+
+.flight-player-badges {
+  display: flex;
+  gap: 4px;
+  flex-wrap: wrap;
+}
+
+.flight-warning {
+  font-size: 12px;
+  color: var(--badge-slow-text);
+  margin-top: 4px;
+}
+
+.hint {
+  font-size: 13px;
+  color: var(--text-secondary);
+  margin: 10px 4px 0;
+}
+
+.result-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 16px;
+}
+
+.result-actions .btn {
+  flex: 1;
+}
+
+/* History */
+
+.history-section {
+  margin-bottom: 40px;
+}
+
+.history-section h2 {
+  font-size: 18px;
+  margin: 0 0 10px;
+}
+
+.history-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.history-item {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 12px 14px;
+}
+
+.history-item-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+.history-date {
+  font-weight: 700;
+  font-size: 15px;
+}
+
+.history-delete {
+  appearance: none;
+  border: none;
+  background: none;
+  color: var(--danger);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 6px;
+}
+
+.history-flights {
+  font-size: 13px;
+  color: var(--text-secondary);
+  line-height: 1.6;
 }

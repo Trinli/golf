@@ -11,16 +11,59 @@
 </head>
 <body>
   <header class="topbar">
-    <h1>Spelare</h1>
+    <h1>Golfgrupper</h1>
     <button id="add-player-btn" class="btn btn-primary">+ Lägg till</button>
   </header>
 
+  <nav class="tabs">
+    <button class="tab-btn active" data-tab="players">Spelare</button>
+    <button class="tab-btn" data-tab="lottery">Lottning</button>
+  </nav>
+
   <main>
-    <p id="empty-state" class="empty-state" hidden>Inga spelare tillagda ännu. Tryck på "+ Lägg till" för att komma igång.</p>
-    <ul id="player-list" class="player-list"></ul>
+    <section id="tab-players" class="tab-panel">
+      <p id="empty-state" class="empty-state" hidden>Inga spelare tillagda ännu. Tryck på "+ Lägg till" för att komma igång.</p>
+      <ul id="player-list" class="player-list"></ul>
+    </section>
+
+    <section id="tab-lottery" class="tab-panel" hidden>
+      <div class="lottery-controls">
+        <label class="field">
+          <span>Datum</span>
+          <input id="lottery-date" type="date" />
+        </label>
+
+        <div class="attendance-header">
+          <span>Deltagare denna vecka</span>
+          <div class="attendance-actions">
+            <button id="select-all-btn" class="btn-link" type="button">Markera alla</button>
+            <button id="select-none-btn" class="btn-link" type="button">Avmarkera alla</button>
+          </div>
+        </div>
+        <ul id="attendance-list" class="attendance-list"></ul>
+
+        <button id="generate-btn" class="btn btn-primary btn-block" type="button">Lotta grupper</button>
+      </div>
+
+      <div id="lottery-result" class="lottery-result" hidden>
+        <div id="lottery-banner" class="lottery-banner" hidden></div>
+        <div id="flight-container" class="flight-container"></div>
+        <p class="hint">Tryck på två spelare i olika flighter för att byta plats på dem.</p>
+        <div class="result-actions">
+          <button id="reroll-btn" class="btn btn-secondary" type="button">Slumpa om</button>
+          <button id="save-week-btn" class="btn btn-primary" type="button">Spara vecka</button>
+        </div>
+      </div>
+
+      <div class="history-section">
+        <h2>Tidigare veckor</h2>
+        <p id="history-empty" class="empty-state" hidden>Inga sparade veckor ännu.</p>
+        <ul id="history-list" class="history-list"></ul>
+      </div>
+    </section>
   </main>
 
-  <footer class="footer-actions">
+  <footer id="players-footer" class="footer-actions">
     <span id="player-count" class="player-count"></span>
     <div class="footer-buttons">
       <button id="export-btn" class="btn btn-secondary">Exportera</button>
@@ -74,5 +117,6 @@
   </div>
 
   <script src="app.js"></script>
+  <script src="lottery.js"></script>
 </body>
 </html>
