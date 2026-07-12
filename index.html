@@ -28,10 +28,16 @@
 
     <section id="tab-lottery" class="tab-panel" hidden>
       <div class="lottery-controls">
-        <label class="field">
-          <span>Datum</span>
-          <input id="lottery-date" type="date" />
-        </label>
+        <div class="field-row">
+          <label class="field">
+            <span>Datum</span>
+            <input id="lottery-date" type="date" />
+          </label>
+          <label class="field">
+            <span>Första flightens starttid</span>
+            <input id="lottery-start-time" type="time" value="09:00" />
+          </label>
+        </div>
 
         <div class="attendance-header">
           <span>Deltagare denna vecka</span>
@@ -96,6 +102,16 @@
           </select>
         </label>
 
+        <label class="field" id="spouse-preference-field" hidden>
+          <span>Preferens med respektive</span>
+          <select id="field-spouse-preference">
+            <option value="apart">Hålls isär (standard)</option>
+            <option value="together">Spelar alltid tillsammans</option>
+            <option value="teeBefore">Startar före respektive</option>
+            <option value="teeAfter">Startar efter respektive</option>
+          </select>
+        </label>
+
         <label class="field field-toggle">
           <span>Långsam spelare</span>
           <input id="field-slow" type="checkbox" />
@@ -104,6 +120,11 @@
         <label class="field field-toggle">
           <span>Behöver golfbil</span>
           <input id="field-cart" type="checkbox" />
+        </label>
+
+        <label class="field field-toggle">
+          <span>Vill starta tidigt</span>
+          <input id="field-early-start" type="checkbox" />
         </label>
 
         <div class="sheet-actions">

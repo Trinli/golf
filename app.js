@@ -14,8 +14,11 @@ const playerForm = document.getElementById("player-form");
 const fieldName = document.getElementById("field-name");
 const fieldHandicap = document.getElementById("field-handicap");
 const fieldSpouse = document.getElementById("field-spouse");
+const spousePreferenceField = document.getElementById("spouse-preference-field");
+const fieldSpousePreference = document.getElementById("field-spouse-preference");
 const fieldSlow = document.getElementById("field-slow");
 const fieldCart = document.getElementById("field-cart");
+const fieldEarlyStart = document.getElementById("field-early-start");
 const deleteBtn = document.getElementById("delete-btn");
 
 function loadPlayers() {
@@ -33,6 +36,13 @@ function savePlayers() {
 
 function findPlayer(id) {
   return players.find((p) => p.id === id) || null;
+}
+
+function spousePreferenceSuffix(preference) {
+  if (preference === "together") return " (alltid ihop)";
+  if (preference === "teeBefore") return " (startar före)";
+  if (preference === "teeAfter") return " (startar efter)";
+  return "";
 }
 
 function render() {
@@ -61,7 +71,7 @@ function render() {
       if (spouse) {
         const b = document.createElement("span");
         b.className = "badge badge-spouse";
-        b.textContent = `Gift med ${spouse.name}`;
+        b.textContent = `Gift med ${spouse.name}${spousePreferenceSuffix(player.spousePreference)}`;
         badges.appendChild(b);
       }
     }
@@ -75,6 +85,12 @@ function render() {
       const b = document.createElement("span");
       b.className = "badge badge-cart";
       b.textContent = "Golfbil";
+      badges.appendChild(b);
+    }
+    if (player.earlyStart) {
+      const b = document.createElement("span");
+      b.className = "badge badge-early";
+      b.textContent = "Startar tidigt";
       badges.appendChild(b);
     }
     if (badges.children.length > 0) {
@@ -105,12 +121,18 @@ function populateSpouseOptions(excludeId) {
   }
 }
 
+function updateSpousePreferenceVisibility() {
+  spousePreferenceField.hidden = !fieldSpouse.value;
+}
+
 function openAddSheet() {
   editingId = null;
   sheetTitle.textContent = "Ny spelare";
   deleteBtn.hidden = true;
   playerForm.reset();
   populateSpouseOptions(null);
+  fieldSpousePreference.value = "apart";
+  updateSpousePreferenceVisibility();
   showSheet();
 }
 
@@ -124,8 +146,11 @@ function openEditSheet(id) {
   fieldName.value = player.name;
   fieldHandicap.value = player.handicap;
   fieldSpouse.value = player.spouseId || "";
+  fieldSpousePreference.value = player.spousePreference || "apart";
   fieldSlow.checked = !!player.slow;
   fieldCart.checked = !!player.cart;
+  fieldEarlyStart.checked = !!player.earlyStart;
+  updateSpousePreferenceVisibility();
   showSheet();
 }
 
@@ -139,22 +164,41 @@ function hideSheet() {
   editingId = null;
 }
 
-function setSpouse(playerId, newSpouseId) {
+function mirrorSpousePreference(preference) {
+  if (preference === "teeBefore") return "teeAfter";
+  if (preference === "teeAfter") return "teeBefore";
+  if (preference === "together") return "together";
+  return "apart";
+}
+
+function setSpouse(playerId, newSpouseId, preference) {
   const player = findPlayer(playerId);
   const oldSpouseId = player.spouseId || null;
 
   if (oldSpouseId && oldSpouseId !== newSpouseId) {
     const oldSpouse = findPlayer(oldSpouseId);
-    if (oldSpouse) oldSpouse.spouseId = null;
+    if (oldSpouse) {
+      oldSpouse.spouseId = null;
+      oldSpouse.spousePreference = "apart";
+    }
   }
 
   if (newSpouseId) {
     const newSpouse = findPlayer(newSpouseId);
     if (newSpouse && newSpouse.spouseId && newSpouse.spouseId !== playerId) {
       const theirOldSpouse = findPlayer(newSpouse.spouseId);
-      if (theirOldSpouse) theirOldSpouse.spouseId = null;
+      if (theirOldSpouse) {
+        theirOldSpouse.spouseId = null;
+        theirOldSpouse.spousePreference = "apart";
+      }
     }
-    if (newSpouse) newSpouse.spouseId = playerId;
+    if (newSpouse) {
+      newSpouse.spouseId = playerId;
+      newSpouse.spousePreference = mirrorSpousePreference(preference);
+    }
+    player.spousePreference = preference || "apart";
+  } else {
+    player.spousePreference = "apart";
   }
 
   player.spouseId = newSpouseId || null;
@@ -165,8 +209,10 @@ playerForm.addEventListener("submit", (e) => {
   const name = fieldName.value.trim();
   const handicap = parseFloat(fieldHandicap.value);
   const spouseId = fieldSpouse.value || null;
+  const spousePreference = fieldSpousePreference.value;
   const slow = fieldSlow.checked;
   const cart = fieldCart.checked;
+  const earlyStart = fieldEarlyStart.checked;
 
   if (!name || Number.isNaN(handicap)) return;
 
@@ -176,11 +222,12 @@ playerForm.addEventListener("submit", (e) => {
     player.handicap = handicap;
     player.slow = slow;
     player.cart = cart;
-    setSpouse(editingId, spouseId);
+    player.earlyStart = earlyStart;
+    setSpouse(editingId, spouseId, spousePreference);
   } else {
     const id = crypto.randomUUID();
-    players.push({ id, name, handicap, spouseId: null, slow, cart });
-    setSpouse(id, spouseId);
+    players.push({ id, name, handicap, spouseId: null, spousePreference: "apart", slow, cart, earlyStart });
+    setSpouse(id, spouseId, spousePreference);
   }
 
   savePlayers();
@@ -195,7 +242,10 @@ deleteBtn.addEventListener("click", () => {
 
   if (player.spouseId) {
     const spouse = findPlayer(player.spouseId);
-    if (spouse) spouse.spouseId = null;
+    if (spouse) {
+      spouse.spouseId = null;
+      spouse.spousePreference = "apart";
+    }
   }
   players = players.filter((p) => p.id !== editingId);
   savePlayers();
@@ -205,6 +255,7 @@ deleteBtn.addEventListener("click", () => {
 
 document.getElementById("add-player-btn").addEventListener("click", openAddSheet);
 document.getElementById("cancel-btn").addEventListener("click", hideSheet);
+fieldSpouse.addEventListener("change", updateSpousePreferenceVisibility);
 sheetBackdrop.addEventListener("click", (e) => {
   if (e.target === sheetBackdrop) hideSheet();
 });

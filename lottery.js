@@ -15,6 +15,7 @@ const tabPanels = {
 };
 
 const lotteryDate = document.getElementById("lottery-date");
+const lotteryStartTime = document.getElementById("lottery-start-time");
 const attendanceList = document.getElementById("attendance-list");
 const selectAllBtn = document.getElementById("select-all-btn");
 const selectNoneBtn = document.getElementById("select-none-btn");
@@ -85,10 +86,11 @@ function evaluate(groupOf, attendees, groupSizes, pairHistory) {
 
   let hardViolations = 0;
   let cartPenalty = 0;
+  let earlyStartPenalty = 0;
   let slowPenalty = 0;
   let repeatPenalty = 0;
 
-  for (const group of groups) {
+  groups.forEach((group, groupIndex) => {
     const sum = group.reduce((s, i) => s + attendees[i].handicap, 0);
     if (sum > HANDICAP_CAP) hardViolations += 1;
 
@@ -96,7 +98,9 @@ function evaluate(groupOf, attendees, groupSizes, pairHistory) {
       for (let b = a + 1; b < group.length; b++) {
         const p1 = attendees[group[a]];
         const p2 = attendees[group[b]];
-        if (p1.spouseId === p2.id) hardViolations += 1;
+        if (p1.spouseId === p2.id && p1.spousePreference !== "together") {
+          hardViolations += 1;
+        }
         repeatPenalty += pairHistory.get(pairKey(p1.id, p2.id)) || 0;
       }
     }
@@ -106,10 +110,67 @@ function evaluate(groupOf, attendees, groupSizes, pairHistory) {
 
     const slowCount = group.filter((i) => attendees[i].slow).length;
     if (slowCount > 1) slowPenalty += slowCount - 1;
+
+    for (const i of group) {
+      if (attendees[i].earlyStart) earlyStartPenalty += groupIndex;
+    }
+  });
+
+  const idToIndex = new Map();
+  attendees.forEach((p, i) => idToIndex.set(p.id, i));
+
+  for (let i = 0; i < attendees.length; i++) {
+    const player = attendees[i];
+    if (!player.spouseId) continue;
+    const spouseIndex = idToIndex.get(player.spouseId);
+    if (spouseIndex === undefined) continue;
+
+    if (player.spousePreference === "together" && groupOf[i] !== groupOf[spouseIndex]) {
+      hardViolations += 1;
+    }
+    if (player.spousePreference === "teeBefore" && groupOf[i] >= groupOf[spouseIndex]) {
+      hardViolations += 1;
+    }
   }
 
-  const total = hardViolations * 1_000_000 + cartPenalty * 10_000 + slowPenalty * 100 + repeatPenalty;
-  return { total, hardViolations, cartPenalty, slowPenalty, repeatPenalty };
+  const total =
+    hardViolations * 1_000_000 +
+    cartPenalty * 10_000 +
+    earlyStartPenalty * 1_000 +
+    slowPenalty * 100 +
+    repeatPenalty;
+  return { total, hardViolations, cartPenalty, earlyStartPenalty, slowPenalty, repeatPenalty };
+}
+
+function getViolatingPlayerIds(attendees, groupOf) {
+  const idToIndex = new Map();
+  attendees.forEach((p, i) => idToIndex.set(p.id, i));
+  const violating = new Set();
+
+  for (let i = 0; i < attendees.length; i++) {
+    const player = attendees[i];
+    if (!player.spouseId) continue;
+    const spouseIndex = idToIndex.get(player.spouseId);
+    if (spouseIndex === undefined) continue;
+
+    const sameGroup = groupOf[i] === groupOf[spouseIndex];
+    const preference = player.spousePreference || "apart";
+
+    if (preference === "together" && !sameGroup) {
+      violating.add(player.id);
+      violating.add(attendees[spouseIndex].id);
+    }
+    if (preference !== "together" && sameGroup) {
+      violating.add(player.id);
+      violating.add(attendees[spouseIndex].id);
+    }
+    if (preference === "teeBefore" && groupOf[i] >= groupOf[spouseIndex]) {
+      violating.add(player.id);
+      violating.add(attendees[spouseIndex].id);
+    }
+  }
+
+  return violating;
 }
 
 function optimize(attendees, groupSizes, pairHistory, iterations = 8000) {
@@ -231,6 +292,8 @@ function renderResult() {
   const groups = Array.from({ length: groupSizes.length }, () => []);
   groupOf.forEach((g, i) => groups[g].push(i));
 
+  const violatingPlayerIds = getViolatingPlayerIds(attendees, groupOf);
+
   groups.forEach((group, groupIndex) => {
     const card = document.createElement("div");
     card.className = "flight-card";
@@ -260,22 +323,12 @@ function renderResult() {
     const list = document.createElement("ul");
     list.className = "flight-players";
 
-    const spouseViolationIds = new Set();
-    for (const i of group) {
-      for (const j of group) {
-        if (i !== j && attendees[i].spouseId === attendees[j].id) {
-          spouseViolationIds.add(attendees[i].id);
-          spouseViolationIds.add(attendees[j].id);
-        }
-      }
-    }
-
     for (const playerIndex of group) {
       const player = attendees[playerIndex];
       const li = document.createElement("li");
       li.className = "flight-player-chip";
       if (playerIndex === selectedChipIndex) li.classList.add("selected");
-      if (sum > HANDICAP_CAP || spouseViolationIds.has(player.id)) {
+      if (sum > HANDICAP_CAP || violatingPlayerIds.has(player.id)) {
         li.classList.add("invalid-pair");
       }
 
@@ -297,6 +350,12 @@ function renderResult() {
         b.textContent = "Golfbil";
         badges.appendChild(b);
       }
+      if (player.earlyStart) {
+        const b = document.createElement("span");
+        b.className = "badge badge-early";
+        b.textContent = "Startar tidigt";
+        badges.appendChild(b);
+      }
 
       li.appendChild(name);
       li.appendChild(badges);
@@ -311,7 +370,7 @@ function renderResult() {
   if (stats.hardViolations > 0) {
     lotteryBanner.hidden = false;
     lotteryBanner.textContent =
-      "Kan inte sparas: en eller flera flighter bryter mot att gifta par ska hållas isär eller handicaptaket på 110. Byt plats på spelare (tryck på två i olika flighter) för att lösa det, eller tryck Slumpa om.";
+      "Kan inte sparas: en eller flera flighter bryter mot handicaptaket på 110, gifta par som ska hållas isär eller ska spela ihop, eller ordningen för ett par som ska starta i viss ordning. Byt plats på spelare (tryck på två i olika flighter) för att lösa det, eller tryck Slumpa om.";
     saveWeekBtn.disabled = true;
   } else {
     lotteryBanner.hidden = true;
@@ -343,14 +402,23 @@ function onChipClick(playerIndex) {
   renderResult();
 }
 
-function buildFlightText({ attendees, groupSizes, groupOf }) {
+function formatFlightTime(startTime, flightIndex, intervalMinutes = 10) {
+  const [h, m] = startTime.split(":").map(Number);
+  const totalMinutes = h * 60 + m + flightIndex * intervalMinutes;
+  const hours = Math.floor(totalMinutes / 60) % 24;
+  const minutes = totalMinutes % 60;
+  return `${hours}:${String(minutes).padStart(2, "0")}`;
+}
+
+function buildFlightText({ attendees, groupSizes, groupOf }, startTime) {
   const groups = Array.from({ length: groupSizes.length }, () => []);
   groupOf.forEach((g, i) => groups[g].push(i));
 
   return groups
     .map((group, index) => {
       const names = group.map((i) => attendees[i].name).join("\n");
-      return `Flight ${index + 1}\n${names}`;
+      const time = formatFlightTime(startTime, index);
+      return `Flight ${time}\n${names}`;
     })
     .join("\n\n");
 }
@@ -417,8 +485,9 @@ rerollBtn.addEventListener("click", runGeneration);
 mailBtn.addEventListener("click", () => {
   if (!currentResult) return;
   const date = lotteryDate.value || new Date().toISOString().slice(0, 10);
+  const startTime = lotteryStartTime.value || "09:00";
   const subject = encodeURIComponent(`Golfgrupper ${date}`);
-  const body = encodeURIComponent(buildFlightText(currentResult));
+  const body = encodeURIComponent(buildFlightText(currentResult, startTime));
   window.location.href = `mailto:?subject=${subject}&body=${body}`;
 });
 

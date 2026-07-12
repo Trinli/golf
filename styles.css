@@ -13,6 +13,8 @@
   --badge-cart-text: #1c7a4d;
   --badge-spouse-bg: #eef0fb;
   --badge-spouse-text: #3b4bb0;
+  --badge-early-bg: #fef3e6;
+  --badge-early-text: #b25e09;
   color-scheme: light;
 }
 
@@ -32,6 +34,8 @@
     --badge-cart-text: #6fe0a0;
     --badge-spouse-bg: #21243d;
     --badge-spouse-text: #9aa5f5;
+    --badge-early-bg: #3a2c18;
+    --badge-early-text: #f5b56a;
     color-scheme: dark;
   }
 }
@@ -158,6 +162,11 @@ main {
   color: var(--badge-spouse-text);
 }
 
+.badge-early {
+  background: var(--badge-early-bg);
+  color: var(--badge-early-text);
+}
+
 .player-handicap {
   font-size: 20px;
   font-weight: 700;
@@ -270,8 +279,20 @@ main {
   color: var(--text-secondary);
 }
 
+.field-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.field-row .field {
+  flex: 1;
+  min-width: 140px;
+}
+
 .field input[type="text"],
 .field input[type="number"],
+.field input[type="time"],
 .field select {
   font-size: 17px;
   color: var(--text);
