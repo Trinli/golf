@@ -5,13 +5,15 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-  <meta name="apple-mobile-web-app-title" content="Golfgrupper" />
-  <title>Golfgrupper — Spelare</title>
+  <meta name="apple-mobile-web-app-title" content="Flightlotten" />
+  <title>Flightlotten</title>
+  <link rel="apple-touch-icon" href="apple-touch-icon.png" />
+  <link rel="icon" type="image/png" href="favicon.png" />
   <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
   <header class="topbar">
-    <h1>Golfgrupper</h1>
+    <h1>Flightlotten</h1>
     <button id="add-player-btn" class="btn btn-primary">+ Lägg till</button>
   </header>
 
@@ -122,9 +124,13 @@
           <input id="field-cart" type="checkbox" />
         </label>
 
-        <label class="field field-toggle">
-          <span>Vill starta tidigt</span>
-          <input id="field-early-start" type="checkbox" />
+        <label class="field">
+          <span>Starttidspreferens</span>
+          <select id="field-time-preference">
+            <option value="none">Ingen preferens</option>
+            <option value="early">Vill starta tidigt</option>
+            <option value="late">Vill starta sent</option>
+          </select>
         </label>
 
         <div class="sheet-actions">

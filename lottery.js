@@ -86,9 +86,10 @@ function evaluate(groupOf, attendees, groupSizes, pairHistory) {
 
   let hardViolations = 0;
   let cartPenalty = 0;
-  let earlyStartPenalty = 0;
+  let timePreferencePenalty = 0;
   let slowPenalty = 0;
   let repeatPenalty = 0;
+  const lastGroupIndex = groupSizes.length - 1;
 
   groups.forEach((group, groupIndex) => {
     const sum = group.reduce((s, i) => s + attendees[i].handicap, 0);
@@ -112,7 +113,9 @@ function evaluate(groupOf, attendees, groupSizes, pairHistory) {
     if (slowCount > 1) slowPenalty += slowCount - 1;
 
     for (const i of group) {
-      if (attendees[i].earlyStart) earlyStartPenalty += groupIndex;
+      const preference = attendees[i].timePreference;
+      if (preference === "early") timePreferencePenalty += groupIndex;
+      else if (preference === "late") timePreferencePenalty += lastGroupIndex - groupIndex;
     }
   });
 
@@ -136,10 +139,10 @@ function evaluate(groupOf, attendees, groupSizes, pairHistory) {
   const total =
     hardViolations * 1_000_000 +
     cartPenalty * 10_000 +
-    earlyStartPenalty * 1_000 +
+    timePreferencePenalty * 1_000 +
     slowPenalty * 100 +
     repeatPenalty;
-  return { total, hardViolations, cartPenalty, earlyStartPenalty, slowPenalty, repeatPenalty };
+  return { total, hardViolations, cartPenalty, timePreferencePenalty, slowPenalty, repeatPenalty };
 }
 
 function getViolatingPlayerIds(attendees, groupOf) {
@@ -350,10 +353,16 @@ function renderResult() {
         b.textContent = "Golfbil";
         badges.appendChild(b);
       }
-      if (player.earlyStart) {
+      if (player.timePreference === "early") {
         const b = document.createElement("span");
         b.className = "badge badge-early";
         b.textContent = "Startar tidigt";
+        badges.appendChild(b);
+      }
+      if (player.timePreference === "late") {
+        const b = document.createElement("span");
+        b.className = "badge badge-late";
+        b.textContent = "Startar sent";
         badges.appendChild(b);
       }
 
@@ -486,7 +495,7 @@ mailBtn.addEventListener("click", () => {
   if (!currentResult) return;
   const date = lotteryDate.value || new Date().toISOString().slice(0, 10);
   const startTime = lotteryStartTime.value || "09:00";
-  const subject = encodeURIComponent(`Golfgrupper ${date}`);
+  const subject = encodeURIComponent(`Flightlotten ${date}`);
   const body = encodeURIComponent(buildFlightText(currentResult, startTime));
   window.location.href = `mailto:?subject=${subject}&body=${body}`;
 });

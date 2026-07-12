@@ -1,4 +1,4 @@
-# Requirements: Lottningsprogram för golfgrupper
+# Requirements: Flightlotten — lottningsprogram för golfgrupper
 
 ## 1. Syfte
 
@@ -33,7 +33,7 @@ Detta dokument beskriver **vad** programmet ska göra, inte hur det ska byggas (
   - **Startar före / startar efter respektive** — hålls isär som standard, men den ena ska alltid hamna i en tidigare flight än den andra (för par som t.ex. samåker och vill kunna värma upp i olika ordning)
 - Flagga: "långsam spelare" (manuellt satt av admin)
 - Flagga: "behöver golfbil" (manuellt satt av admin)
-- Flagga: "vill starta tidigt" (manuellt satt av admin) — spelaren bör hamna i en av de tidigare flighterna
+- Starttidspreferens (manuellt satt av admin): **Ingen preferens** (standard) / **Vill starta tidigt** / **Vill starta sent** — spelaren bör hamna i en av de tidigare respektive senare flighterna
 
 Not: "Behöver golfbil" avser golfbil (cart) under rundan, inte skjuts till banan. Alla spelare kan köra en golfbil, så det räcker med en flagga per spelare — ingen separat "kan köra"-flagga behövs.
 
@@ -61,12 +61,12 @@ Om lottningen inte kan uppfylla samtliga hårda krav samtidigt (t.ex. om handica
 Vid konflikt mellan mjuka krav gäller denna ordning, högst prioritet först:
 
 1. **Golfbilsdelning** — spelare flaggade "behöver golfbil" ska grupperas parvis (2 och 2) inom samma flight så de kan dela bil.
-2. **Tidiga starter** — spelare flaggade "vill starta tidigt" bör hamna i en av de tidigare flighterna.
+2. **Starttidspreferens** — spelare med preferensen "vill starta tidigt" bör hamna i en av de tidigare flighterna, och spelare med "vill starta sent" bör hamna i en av de senare flighterna.
 3. **Undvik långsamma spelare ihop** — flighter bör inte innehålla fler än en spelare flaggad som "långsam", om det går att undvika.
 4. **Rotation / variation** — lottningen ska minimera antalet gånger samma två spelare hamnar i samma flight, sett över säsongens historik. Om flera lottningar uppfyller kraven ovan lika bra väljs den som ger mest variation jämfört med tidigare veckor.
 
 Fullständig prioritetsordning vid konflikt (hög till låg):
-**Gifta par isär / ihop / startordning → Handicaptak → Golfbilsdelning → Tidiga starter → Undvik långsamma ihop → Rotation/variation**
+**Gifta par isär / ihop / startordning → Handicaptak → Golfbilsdelning → Starttidspreferens → Undvik långsamma ihop → Rotation/variation**
 
 De fyra första (gifta par-reglerna och handicaptaket) är absoluta krav och får aldrig kompromissas. De fyra sista löses i angiven ordning — om det är omöjligt att uppfylla alla samtidigt prioriteras det som står högst.
 
@@ -75,7 +75,7 @@ De fyra första (gifta par-reglerna och handicaptaket) är absoluta krav och få
 För varje spelvecka: en lista av flighter, där varje flight visar vilka spelare som ingår, samt (för spårbarhet) flight-summan av handicap.
 
 ### Dela via mail
-Lottningen ska kunna skickas som text via mail med ett enda knapptryck. Knappen öppnar enhetens standard-mailprogram (via en `mailto:`-länk, kräver ingen backend) med ämnet förifyllt (t.ex. "Golfgrupper 2026-07-19") och texten formaterad med en starttid per flight (flightnumren har ersatts av klockslag, med 10 minuters mellanrum mellan flighterna):
+Lottningen ska kunna skickas som text via mail med ett enda knapptryck. Knappen öppnar enhetens standard-mailprogram (via en `mailto:`-länk, kräver ingen backend) med ämnet förifyllt (t.ex. "Flightlotten 2026-07-19") och texten formaterad med en starttid per flight (flightnumren har ersatts av klockslag, med 10 minuters mellanrum mellan flighterna):
 
 ```
 Flight 9:00

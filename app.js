@@ -18,13 +18,20 @@ const spousePreferenceField = document.getElementById("spouse-preference-field")
 const fieldSpousePreference = document.getElementById("field-spouse-preference");
 const fieldSlow = document.getElementById("field-slow");
 const fieldCart = document.getElementById("field-cart");
-const fieldEarlyStart = document.getElementById("field-early-start");
+const fieldTimePreference = document.getElementById("field-time-preference");
 const deleteBtn = document.getElementById("delete-btn");
 
 function loadPlayers() {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
-    return raw ? JSON.parse(raw) : [];
+    const loaded = raw ? JSON.parse(raw) : [];
+    for (const player of loaded) {
+      if (player.timePreference === undefined) {
+        player.timePreference = player.earlyStart ? "early" : "none";
+      }
+      delete player.earlyStart;
+    }
+    return loaded;
   } catch {
     return [];
   }
@@ -87,10 +94,16 @@ function render() {
       b.textContent = "Golfbil";
       badges.appendChild(b);
     }
-    if (player.earlyStart) {
+    if (player.timePreference === "early") {
       const b = document.createElement("span");
       b.className = "badge badge-early";
       b.textContent = "Startar tidigt";
+      badges.appendChild(b);
+    }
+    if (player.timePreference === "late") {
+      const b = document.createElement("span");
+      b.className = "badge badge-late";
+      b.textContent = "Startar sent";
       badges.appendChild(b);
     }
     if (badges.children.length > 0) {
@@ -132,6 +145,7 @@ function openAddSheet() {
   playerForm.reset();
   populateSpouseOptions(null);
   fieldSpousePreference.value = "apart";
+  fieldTimePreference.value = "none";
   updateSpousePreferenceVisibility();
   showSheet();
 }
@@ -149,7 +163,7 @@ function openEditSheet(id) {
   fieldSpousePreference.value = player.spousePreference || "apart";
   fieldSlow.checked = !!player.slow;
   fieldCart.checked = !!player.cart;
-  fieldEarlyStart.checked = !!player.earlyStart;
+  fieldTimePreference.value = player.timePreference || "none";
   updateSpousePreferenceVisibility();
   showSheet();
 }
@@ -212,7 +226,7 @@ playerForm.addEventListener("submit", (e) => {
   const spousePreference = fieldSpousePreference.value;
   const slow = fieldSlow.checked;
   const cart = fieldCart.checked;
-  const earlyStart = fieldEarlyStart.checked;
+  const timePreference = fieldTimePreference.value;
 
   if (!name || Number.isNaN(handicap)) return;
 
@@ -222,11 +236,11 @@ playerForm.addEventListener("submit", (e) => {
     player.handicap = handicap;
     player.slow = slow;
     player.cart = cart;
-    player.earlyStart = earlyStart;
+    player.timePreference = timePreference;
     setSpouse(editingId, spouseId, spousePreference);
   } else {
     const id = crypto.randomUUID();
-    players.push({ id, name, handicap, spouseId: null, spousePreference: "apart", slow, cart, earlyStart });
+    players.push({ id, name, handicap, spouseId: null, spousePreference: "apart", slow, cart, timePreference });
     setSpouse(id, spouseId, spousePreference);
   }
 

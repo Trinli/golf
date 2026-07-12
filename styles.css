@@ -15,6 +15,8 @@
   --badge-spouse-text: #3b4bb0;
   --badge-early-bg: #fef3e6;
   --badge-early-text: #b25e09;
+  --badge-late-bg: #e8eefc;
+  --badge-late-text: #1f5cb8;
   color-scheme: light;
 }
 
@@ -36,6 +38,8 @@
     --badge-spouse-text: #9aa5f5;
     --badge-early-bg: #3a2c18;
     --badge-early-text: #f5b56a;
+    --badge-late-bg: #182338;
+    --badge-late-text: #7fa8ef;
     color-scheme: dark;
   }
 }
@@ -165,6 +169,11 @@ main {
 .badge-early {
   background: var(--badge-early-bg);
   color: var(--badge-early-text);
+}
+
+.badge-late {
+  background: var(--badge-late-bg);
+  color: var(--badge-late-text);
 }
 
 .player-handicap {
