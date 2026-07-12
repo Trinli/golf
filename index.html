@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="sv">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="Golfgrupper" />
+  <title>Golfgrupper — Spelare</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <header class="topbar">
+    <h1>Spelare</h1>
+    <button id="add-player-btn" class="btn btn-primary">+ Lägg till</button>
+  </header>
+
+  <main>
+    <p id="empty-state" class="empty-state" hidden>Inga spelare tillagda ännu. Tryck på "+ Lägg till" för att komma igång.</p>
+    <ul id="player-list" class="player-list"></ul>
+  </main>
+
+  <footer class="footer-actions">
+    <span id="player-count" class="player-count"></span>
+    <div class="footer-buttons">
+      <button id="export-btn" class="btn btn-secondary">Exportera</button>
+      <button id="import-btn" class="btn btn-secondary">Importera</button>
+      <input id="import-file" type="file" accept="application/json" hidden />
+    </div>
+  </footer>
+
+  <div id="sheet-backdrop" class="sheet-backdrop" hidden>
+    <div id="sheet" class="sheet" role="dialog" aria-modal="true">
+      <div class="sheet-handle"></div>
+      <h2 id="sheet-title">Ny spelare</h2>
+
+      <form id="player-form">
+        <label class="field">
+          <span>Namn</span>
+          <input id="field-name" type="text" autocomplete="off" required />
+        </label>
+
+        <label class="field">
+          <span>Handicap</span>
+          <input id="field-handicap" type="number" step="0.1" inputmode="decimal" required />
+        </label>
+
+        <label class="field">
+          <span>Gift med</span>
+          <select id="field-spouse">
+            <option value="">Ingen</option>
+          </select>
+        </label>
+
+        <label class="field field-toggle">
+          <span>Långsam spelare</span>
+          <input id="field-slow" type="checkbox" />
+        </label>
+
+        <label class="field field-toggle">
+          <span>Behöver golfbil</span>
+          <input id="field-cart" type="checkbox" />
+        </label>
+
+        <div class="sheet-actions">
+          <button type="button" id="delete-btn" class="btn btn-danger" hidden>Ta bort</button>
+          <div class="sheet-actions-right">
+            <button type="button" id="cancel-btn" class="btn btn-secondary">Avbryt</button>
+            <button type="submit" class="btn btn-primary">Spara</button>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>

@@ -1,0 +1,306 @@
+:root {
+  --bg: #f2f2f7;
+  --surface: #ffffff;
+  --text: #1c1c1e;
+  --text-secondary: #6b6b70;
+  --border: #e0e0e5;
+  --accent: #1c7a4d;
+  --accent-text: #ffffff;
+  --danger: #d0332c;
+  --badge-slow-bg: #fdecea;
+  --badge-slow-text: #b3261e;
+  --badge-cart-bg: #eaf3ec;
+  --badge-cart-text: #1c7a4d;
+  --badge-spouse-bg: #eef0fb;
+  --badge-spouse-text: #3b4bb0;
+  color-scheme: light;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #000000;
+    --surface: #1c1c1e;
+    --text: #f2f2f7;
+    --text-secondary: #98989d;
+    --border: #38383a;
+    --accent: #34c774;
+    --accent-text: #04150b;
+    --danger: #ff6961;
+    --badge-slow-bg: #3a2220;
+    --badge-slow-text: #ff8a80;
+    --badge-cart-bg: #1e2f22;
+    --badge-cart-text: #6fe0a0;
+    --badge-spouse-bg: #21243d;
+    --badge-spouse-text: #9aa5f5;
+    color-scheme: dark;
+  }
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html, body {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  padding-top: env(safe-area-inset-top);
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+.topbar {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px;
+  background: color-mix(in srgb, var(--bg) 85%, transparent);
+  backdrop-filter: blur(20px);
+  border-bottom: 1px solid var(--border);
+}
+
+.topbar h1 {
+  font-size: 22px;
+  margin: 0;
+}
+
+main {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 12px 16px 100px;
+}
+
+.empty-state {
+  text-align: center;
+  color: var(--text-secondary);
+  margin-top: 60px;
+  font-size: 17px;
+  line-height: 1.5;
+}
+
+.player-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.player-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 14px 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  cursor: pointer;
+  min-height: 44px;
+  transition: transform 0.1s ease;
+}
+
+.player-card:active {
+  transform: scale(0.98);
+}
+
+.player-main {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+
+.player-name {
+  font-size: 17px;
+  font-weight: 600;
+}
+
+.player-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.badge {
+  font-size: 12px;
+  font-weight: 600;
+  padding: 3px 9px;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+
+.badge-slow {
+  background: var(--badge-slow-bg);
+  color: var(--badge-slow-text);
+}
+
+.badge-cart {
+  background: var(--badge-cart-bg);
+  color: var(--badge-cart-text);
+}
+
+.badge-spouse {
+  background: var(--badge-spouse-bg);
+  color: var(--badge-spouse-text);
+}
+
+.player-handicap {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--text-secondary);
+  flex-shrink: 0;
+}
+
+.footer-actions {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 20px calc(12px + env(safe-area-inset-bottom));
+  background: color-mix(in srgb, var(--bg) 85%, transparent);
+  backdrop-filter: blur(20px);
+  border-top: 1px solid var(--border);
+}
+
+.player-count {
+  color: var(--text-secondary);
+  font-size: 14px;
+}
+
+.footer-buttons {
+  display: flex;
+  gap: 10px;
+}
+
+.btn {
+  appearance: none;
+  border: none;
+  border-radius: 12px;
+  padding: 12px 18px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  min-height: 44px;
+  min-width: 44px;
+}
+
+.btn-primary {
+  background: var(--accent);
+  color: var(--accent-text);
+}
+
+.btn-secondary {
+  background: var(--surface);
+  color: var(--text);
+  border: 1px solid var(--border);
+}
+
+.btn-danger {
+  background: transparent;
+  color: var(--danger);
+  border: 1px solid var(--danger);
+}
+
+.sheet-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.4);
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  z-index: 100;
+}
+
+.sheet {
+  width: 100%;
+  max-width: 560px;
+  max-height: 88vh;
+  overflow-y: auto;
+  background: var(--bg);
+  border-radius: 20px 20px 0 0;
+  padding: 8px 24px calc(24px + env(safe-area-inset-bottom));
+}
+
+@media (min-width: 640px) {
+  .sheet-backdrop {
+    align-items: center;
+  }
+  .sheet {
+    border-radius: 20px;
+    max-height: 80vh;
+  }
+}
+
+.sheet-handle {
+  width: 36px;
+  height: 5px;
+  border-radius: 999px;
+  background: var(--border);
+  margin: 8px auto 4px;
+}
+
+.sheet h2 {
+  font-size: 20px;
+  margin: 8px 0 20px;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 16px;
+  font-size: 15px;
+  color: var(--text-secondary);
+}
+
+.field input[type="text"],
+.field input[type="number"],
+.field select {
+  font-size: 17px;
+  color: var(--text);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 12px 14px;
+  min-height: 44px;
+}
+
+.field-toggle {
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 17px;
+  color: var(--text);
+}
+
+.field-toggle input[type="checkbox"] {
+  width: 24px;
+  height: 24px;
+}
+
+.sheet-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-top: 24px;
+}
+
+.sheet-actions-right {
+  display: flex;
+  gap: 10px;
+  margin-left: auto;
+}
