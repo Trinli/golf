@@ -63,6 +63,23 @@ De två första är absoluta krav och får aldrig kompromissas. De tre sista lö
 
 För varje spelvecka: en lista av flighter, där varje flight visar vilka spelare som ingår, samt (för spårbarhet) flight-summan av handicap.
 
+### Dela via mail
+Lottningen ska kunna skickas som text via mail med ett enda knapptryck. Knappen öppnar enhetens standard-mailprogram (via en `mailto:`-länk, kräver ingen backend) med ämnet förifyllt (t.ex. "Golfgrupper 2026-07-19") och texten formaterad som:
+
+```
+Flight 1
+Namn 1
+Namn 2
+Namn 3
+
+Flight 2
+Namn 4
+Namn 5
+Namn 6
+```
+
+Mottagarfältet lämnas tomt — användaren väljer mottagare själv varje gång. Funktionen gäller den aktuella lottningen (inte historiska veckor).
+
 ## 6. Beslutade edge cases
 
 - **Ojämnt antal anmälda**: Om antalet anmälda inte är jämnt delbart med 3 skapas en flight med 4 spelare (om resten är 1) eller en flight med 2 spelare (om resten är 2), övriga flighter har 3 spelare.

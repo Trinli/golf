@@ -24,6 +24,7 @@ const lotteryResult = document.getElementById("lottery-result");
 const lotteryBanner = document.getElementById("lottery-banner");
 const flightContainer = document.getElementById("flight-container");
 const rerollBtn = document.getElementById("reroll-btn");
+const mailBtn = document.getElementById("mail-btn");
 const saveWeekBtn = document.getElementById("save-week-btn");
 
 const historyList = document.getElementById("history-list");
@@ -342,6 +343,18 @@ function onChipClick(playerIndex) {
   renderResult();
 }
 
+function buildFlightText({ attendees, groupSizes, groupOf }) {
+  const groups = Array.from({ length: groupSizes.length }, () => []);
+  groupOf.forEach((g, i) => groups[g].push(i));
+
+  return groups
+    .map((group, index) => {
+      const names = group.map((i) => attendees[i].name).join("\n");
+      return `Flight ${index + 1}\n${names}`;
+    })
+    .join("\n\n");
+}
+
 function renderHistory() {
   const sorted = [...weeks].sort((a, b) => b.date.localeCompare(a.date));
   historyEmpty.hidden = weeks.length > 0;
@@ -400,6 +413,14 @@ selectNoneBtn.addEventListener("click", () => {
 
 generateBtn.addEventListener("click", runGeneration);
 rerollBtn.addEventListener("click", runGeneration);
+
+mailBtn.addEventListener("click", () => {
+  if (!currentResult) return;
+  const date = lotteryDate.value || new Date().toISOString().slice(0, 10);
+  const subject = encodeURIComponent(`Golfgrupper ${date}`);
+  const body = encodeURIComponent(buildFlightText(currentResult));
+  window.location.href = `mailto:?subject=${subject}&body=${body}`;
+});
 
 saveWeekBtn.addEventListener("click", () => {
   if (!currentResult) return;
