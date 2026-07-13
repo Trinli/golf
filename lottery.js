@@ -5,6 +5,7 @@ let weeks = loadWeeks();
 let attendingIds = new Set();
 let currentResult = null; // { attendees: [player,...], groupSizes: [...], groupOf: [...] }
 let selectedChipIndex = null;
+let selectedEmptyGroup = null;
 
 const addPlayerBtn = document.getElementById("add-player-btn");
 const playersFooter = document.getElementById("players-footer");
@@ -281,6 +282,7 @@ function runGeneration() {
 
   currentResult = { attendees, groupSizes, groupOf: best.groupOf };
   selectedChipIndex = null;
+  selectedEmptyGroup = null;
   renderResult();
 }
 
@@ -372,6 +374,15 @@ function renderResult() {
       list.appendChild(li);
     }
 
+    if (group.length < 4) {
+      const li = document.createElement("li");
+      li.className = "flight-player-chip flight-empty-slot";
+      if (groupIndex === selectedEmptyGroup) li.classList.add("selected");
+      li.textContent = "Tom plats";
+      li.addEventListener("click", () => onEmptySlotClick(groupIndex));
+      list.appendChild(li);
+    }
+
     card.appendChild(list);
     flightContainer.appendChild(card);
   });
@@ -388,7 +399,7 @@ function renderResult() {
 }
 
 function onChipClick(playerIndex) {
-  if (selectedChipIndex === null) {
+  if (selectedChipIndex === null && selectedEmptyGroup === null) {
     selectedChipIndex = playerIndex;
     renderResult();
     return;
@@ -399,6 +410,14 @@ function onChipClick(playerIndex) {
     return;
   }
   const { groupOf } = currentResult;
+
+  if (selectedEmptyGroup !== null) {
+    groupOf[playerIndex] = selectedEmptyGroup;
+    selectedEmptyGroup = null;
+    renderResult();
+    return;
+  }
+
   if (groupOf[selectedChipIndex] === groupOf[playerIndex]) {
     selectedChipIndex = playerIndex;
     renderResult();
@@ -408,6 +427,31 @@ function onChipClick(playerIndex) {
   groupOf[selectedChipIndex] = groupOf[playerIndex];
   groupOf[playerIndex] = tmp;
   selectedChipIndex = null;
+  renderResult();
+}
+
+function onEmptySlotClick(groupIndex) {
+  if (selectedChipIndex === null && selectedEmptyGroup === null) {
+    selectedEmptyGroup = groupIndex;
+    renderResult();
+    return;
+  }
+  if (selectedEmptyGroup === groupIndex) {
+    selectedEmptyGroup = null;
+    renderResult();
+    return;
+  }
+  if (selectedChipIndex !== null) {
+    const { groupOf } = currentResult;
+    if (groupOf[selectedChipIndex] !== groupIndex) {
+      groupOf[selectedChipIndex] = groupIndex;
+    }
+    selectedChipIndex = null;
+    selectedEmptyGroup = null;
+    renderResult();
+    return;
+  }
+  selectedEmptyGroup = groupIndex;
   renderResult();
 }
 

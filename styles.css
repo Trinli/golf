@@ -552,6 +552,18 @@ main {
   background: color-mix(in srgb, var(--danger) 10%, var(--surface));
 }
 
+.flight-empty-slot {
+  border-style: dashed;
+  color: var(--text-secondary);
+  font-style: italic;
+  justify-content: center;
+}
+
+.flight-empty-slot.selected {
+  border-color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 12%, var(--surface));
+}
+
 .flight-player-name {
   font-weight: 600;
 }
