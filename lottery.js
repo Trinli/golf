@@ -317,7 +317,7 @@ function renderResult() {
     const sum = group.reduce((s, i) => s + attendees[i].handicap, 0);
     const hcp = document.createElement("span");
     hcp.className = "flight-hcp" + (sum > HANDICAP_CAP ? " invalid" : "");
-    hcp.textContent = `HCP ${sum}`;
+    hcp.textContent = `HCP ${sum.toFixed(1)}`;
 
     header.appendChild(title);
     header.appendChild(hcp);
