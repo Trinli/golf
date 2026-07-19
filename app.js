@@ -3,6 +3,7 @@ const STORAGE_KEY = "golf-players";
 let players = loadPlayers();
 let editingId = null;
 let editingRelations = []; // arbetslista medan sheeten är öppen: [{ playerId, type }]
+let editingSnapshot = null; // players-arrayen innan sheeten öppnades, för att kunna ångra hela sessionen
 
 const RELATION_TYPE_LABELS = {
   always: "Alltid tillsammans",
@@ -31,6 +32,7 @@ const fieldSlow = document.getElementById("field-slow");
 const fieldCart = document.getElementById("field-cart");
 const fieldTimePreference = document.getElementById("field-time-preference");
 const deleteBtn = document.getElementById("delete-btn");
+const doneBtn = document.getElementById("done-btn");
 
 function addUnique(arr, id) {
   if (!arr.includes(id)) arr.push(id);
@@ -201,6 +203,16 @@ function render() {
 
 function renderRelationsList() {
   fieldRelationsList.innerHTML = "";
+
+  if (!editingId) {
+    relationAddRow.hidden = true;
+    const hint = document.createElement("li");
+    hint.className = "relation-rule-hint";
+    hint.textContent = "Fyll i namn och handicap för att kunna lägga till regler.";
+    fieldRelationsList.appendChild(hint);
+    return;
+  }
+
   const sorted = [...editingRelations].sort((a, b) => {
     const na = findPlayer(a.playerId)?.name || "";
     const nb = findPlayer(b.playerId)?.name || "";
@@ -224,6 +236,9 @@ function renderRelationsList() {
     removeBtn.setAttribute("aria-label", `Ta bort regel för ${player.name}`);
     removeBtn.addEventListener("click", () => {
       editingRelations = editingRelations.filter((r) => r !== rel);
+      applyRelations(editingId, editingRelations);
+      savePlayers();
+      render();
       renderRelationsList();
     });
 
@@ -269,6 +284,9 @@ relationAddConfirm.addEventListener("click", () => {
   if (!playerId) return;
   editingRelations.push({ playerId, type });
   relationAddRow.hidden = true;
+  applyRelations(editingId, editingRelations);
+  savePlayers();
+  render();
   renderRelationsList();
 });
 
@@ -306,6 +324,7 @@ function openEditSheet(id) {
 }
 
 function showSheet() {
+  editingSnapshot = JSON.parse(JSON.stringify(players));
   sheetBackdrop.hidden = false;
   fieldName.focus();
 }
@@ -313,6 +332,51 @@ function showSheet() {
 function hideSheet() {
   sheetBackdrop.hidden = true;
   editingId = null;
+  editingSnapshot = null;
+}
+
+function cancelEdit() {
+  if (editingSnapshot) {
+    players = editingSnapshot;
+    savePlayers();
+    render();
+  }
+  hideSheet();
+}
+
+// Skapar spelaren i registret så fort namn och handicap är giltiga (för nya
+// spelare) — därefter sparas varje fältändring direkt, utan Spara-knapp.
+function getOrCreateEditingPlayer() {
+  if (editingId) return findPlayer(editingId);
+
+  const name = fieldName.value.trim();
+  const handicap = parseFloat(fieldHandicap.value);
+  if (!name || Number.isNaN(handicap)) return null;
+
+  const id = crypto.randomUUID();
+  players.push({
+    id,
+    name,
+    handicap,
+    alwaysWith: [],
+    neverWith: [],
+    startsBefore: [],
+    slow: fieldSlow.checked,
+    cart: fieldCart.checked,
+    timePreference: fieldTimePreference.value,
+  });
+  editingId = id;
+  sheetTitle.textContent = "Redigera spelare";
+  return findPlayer(id);
+}
+
+function saveField(mutate) {
+  const player = getOrCreateEditingPlayer();
+  if (!player) return;
+  mutate(player);
+  savePlayers();
+  render();
+  renderRelationsList();
 }
 
 // Alltid/aldrig tillsammans är ömsesidiga relationer och speglas på båda spelarna.
@@ -360,35 +424,42 @@ function applyRelations(playerId, relations) {
   }
 }
 
-playerForm.addEventListener("submit", (e) => {
-  e.preventDefault();
-  const name = fieldName.value.trim();
-  const handicap = parseFloat(fieldHandicap.value);
-  const slow = fieldSlow.checked;
-  const cart = fieldCart.checked;
-  const timePreference = fieldTimePreference.value;
+// Enter i ett textfält ska inte trigga en sidladdning — spara sker redan löpande.
+playerForm.addEventListener("submit", (e) => e.preventDefault());
 
-  if (!name || Number.isNaN(handicap)) return;
-
-  const id = editingId || crypto.randomUUID();
-
-  if (editingId) {
-    const player = findPlayer(editingId);
-    player.name = name;
-    player.handicap = handicap;
-    player.slow = slow;
-    player.cart = cart;
-    player.timePreference = timePreference;
-  } else {
-    players.push({ id, name, handicap, alwaysWith: [], neverWith: [], startsBefore: [], slow, cart, timePreference });
-  }
-
-  applyRelations(id, editingRelations);
-
-  savePlayers();
-  render();
-  hideSheet();
+fieldName.addEventListener("input", () => {
+  saveField((player) => {
+    const name = fieldName.value.trim();
+    if (name) player.name = name;
+  });
 });
+
+fieldHandicap.addEventListener("input", () => {
+  saveField((player) => {
+    const handicap = parseFloat(fieldHandicap.value);
+    if (!Number.isNaN(handicap)) player.handicap = handicap;
+  });
+});
+
+fieldSlow.addEventListener("change", () => {
+  saveField((player) => {
+    player.slow = fieldSlow.checked;
+  });
+});
+
+fieldCart.addEventListener("change", () => {
+  saveField((player) => {
+    player.cart = fieldCart.checked;
+  });
+});
+
+fieldTimePreference.addEventListener("change", () => {
+  saveField((player) => {
+    player.timePreference = fieldTimePreference.value;
+  });
+});
+
+doneBtn.addEventListener("click", hideSheet);
 
 deleteBtn.addEventListener("click", () => {
   if (!editingId) return;
@@ -407,7 +478,7 @@ deleteBtn.addEventListener("click", () => {
 });
 
 document.getElementById("add-player-btn").addEventListener("click", openAddSheet);
-document.getElementById("cancel-btn").addEventListener("click", hideSheet);
+document.getElementById("cancel-btn").addEventListener("click", cancelEdit);
 sheetBackdrop.addEventListener("click", (e) => {
   if (e.target === sheetBackdrop) hideSheet();
 });

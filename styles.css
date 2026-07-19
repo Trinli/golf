@@ -397,6 +397,13 @@ main {
   font-weight: 700;
 }
 
+.relation-rule-hint {
+  list-style: none;
+  color: var(--text-secondary);
+  font-size: 13px;
+  padding: 4px 0;
+}
+
 .relation-add-row {
   display: flex;
   flex-wrap: wrap;
