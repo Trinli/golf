@@ -227,6 +227,19 @@ function optimize(attendees, groupSizes, pairHistory, iterations = 8000) {
   return best;
 }
 
+// En enda optimize()-körning fastnar ibland i en ofullständig lösning (t.ex. en
+// stor "alltid tillsammans"-grupp som splittras) trots att en giltig lösning
+// finns. Flera oberoende försök, med det bästa resultatet behållet, gör det
+// mycket osannolikt att alla försök fastnar i samma återvändsgränd samtidigt.
+function optimizeWithRestarts(attendees, groupSizes, pairHistory, restarts = 5, iterations = 8000) {
+  let best = null;
+  for (let i = 0; i < restarts; i++) {
+    const attempt = optimize(attendees, groupSizes, pairHistory, iterations);
+    if (!best || attempt.stats.total < best.stats.total) best = attempt;
+  }
+  return best;
+}
+
 function switchTab(tab) {
   for (const btn of tabButtons) {
     btn.classList.toggle("active", btn.dataset.tab === tab);
@@ -292,7 +305,7 @@ function runGeneration() {
 
   const groupSizes = computeGroupSizes(attendees.length);
   const pairHistory = buildPairHistory();
-  const best = optimize(attendees, groupSizes, pairHistory);
+  const best = optimizeWithRestarts(attendees, groupSizes, pairHistory);
 
   currentResult = { attendees, groupSizes, groupOf: best.groupOf };
   selectedChipIndex = null;
