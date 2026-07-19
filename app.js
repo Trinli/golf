@@ -508,6 +508,7 @@ importInput.addEventListener("change", async () => {
       importInput.value = "";
       return;
     }
+    migrateLegacySpouseData(imported);
     players = imported;
     savePlayers();
     render();
