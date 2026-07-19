@@ -18,6 +18,7 @@ const tabPanels = {
 const lotteryDate = document.getElementById("lottery-date");
 const lotteryStartTime = document.getElementById("lottery-start-time");
 const attendanceList = document.getElementById("attendance-list");
+const attendanceCount = document.getElementById("attendance-count");
 const selectAllBtn = document.getElementById("select-all-btn");
 const selectNoneBtn = document.getElementById("select-none-btn");
 const generateBtn = document.getElementById("generate-btn");
@@ -100,7 +101,7 @@ function evaluate(groupOf, attendees, groupSizes, pairHistory) {
       for (let b = a + 1; b < group.length; b++) {
         const p1 = attendees[group[a]];
         const p2 = attendees[group[b]];
-        if (p1.spouseId === p2.id && p1.spousePreference !== "together") {
+        if (p1.neverWith && p1.neverWith.includes(p2.id)) {
           hardViolations += 1;
         }
         repeatPenalty += pairHistory.get(pairKey(p1.id, p2.id)) || 0;
@@ -125,15 +126,15 @@ function evaluate(groupOf, attendees, groupSizes, pairHistory) {
 
   for (let i = 0; i < attendees.length; i++) {
     const player = attendees[i];
-    if (!player.spouseId) continue;
-    const spouseIndex = idToIndex.get(player.spouseId);
-    if (spouseIndex === undefined) continue;
-
-    if (player.spousePreference === "together" && groupOf[i] !== groupOf[spouseIndex]) {
-      hardViolations += 1;
+    for (const otherId of player.alwaysWith || []) {
+      const j = idToIndex.get(otherId);
+      if (j === undefined) continue;
+      if (groupOf[i] !== groupOf[j]) hardViolations += 1;
     }
-    if (player.spousePreference === "teeBefore" && groupOf[i] >= groupOf[spouseIndex]) {
-      hardViolations += 1;
+    for (const otherId of player.startsBefore || []) {
+      const j = idToIndex.get(otherId);
+      if (j === undefined) continue;
+      if (groupOf[i] >= groupOf[j]) hardViolations += 1;
     }
   }
 
@@ -153,24 +154,30 @@ function getViolatingPlayerIds(attendees, groupOf) {
 
   for (let i = 0; i < attendees.length; i++) {
     const player = attendees[i];
-    if (!player.spouseId) continue;
-    const spouseIndex = idToIndex.get(player.spouseId);
-    if (spouseIndex === undefined) continue;
 
-    const sameGroup = groupOf[i] === groupOf[spouseIndex];
-    const preference = player.spousePreference || "apart";
-
-    if (preference === "together" && !sameGroup) {
-      violating.add(player.id);
-      violating.add(attendees[spouseIndex].id);
+    for (const otherId of player.neverWith || []) {
+      const j = idToIndex.get(otherId);
+      if (j === undefined) continue;
+      if (groupOf[i] === groupOf[j]) {
+        violating.add(player.id);
+        violating.add(attendees[j].id);
+      }
     }
-    if (preference !== "together" && sameGroup) {
-      violating.add(player.id);
-      violating.add(attendees[spouseIndex].id);
+    for (const otherId of player.alwaysWith || []) {
+      const j = idToIndex.get(otherId);
+      if (j === undefined) continue;
+      if (groupOf[i] !== groupOf[j]) {
+        violating.add(player.id);
+        violating.add(attendees[j].id);
+      }
     }
-    if (preference === "teeBefore" && groupOf[i] >= groupOf[spouseIndex]) {
-      violating.add(player.id);
-      violating.add(attendees[spouseIndex].id);
+    for (const otherId of player.startsBefore || []) {
+      const j = idToIndex.get(otherId);
+      if (j === undefined) continue;
+      if (groupOf[i] >= groupOf[j]) {
+        violating.add(player.id);
+        violating.add(attendees[j].id);
+      }
     }
   }
 
@@ -235,6 +242,10 @@ function switchTab(tab) {
   }
 }
 
+function updateAttendanceCount() {
+  attendanceCount.textContent = `(${attendingIds.size} av ${players.length} valda)`;
+}
+
 function renderAttendanceList() {
   const sorted = [...players].sort((a, b) => a.name.localeCompare(b.name, "sv"));
   attendanceList.innerHTML = "";
@@ -249,6 +260,7 @@ function renderAttendanceList() {
     checkbox.addEventListener("change", () => {
       if (checkbox.checked) attendingIds.add(player.id);
       else attendingIds.delete(player.id);
+      updateAttendanceCount();
     });
 
     const name = document.createElement("span");
@@ -267,6 +279,8 @@ function renderAttendanceList() {
     });
     attendanceList.appendChild(li);
   }
+
+  updateAttendanceCount();
 }
 
 function runGeneration() {
@@ -390,7 +404,7 @@ function renderResult() {
   if (stats.hardViolations > 0) {
     lotteryBanner.hidden = false;
     lotteryBanner.textContent =
-      "Kan inte sparas: en eller flera flighter bryter mot handicaptaket på 110, gifta par som ska hållas isär eller ska spela ihop, eller ordningen för ett par som ska starta i viss ordning. Byt plats på spelare (tryck på två i olika flighter) för att lösa det, eller tryck Slumpa om.";
+      "Kan inte sparas: en eller flera flighter bryter mot handicaptaket på 110, spelare som aldrig eller alltid ska vara tillsammans, eller startordningen mellan spelare. Byt plats på spelare (tryck på två i olika flighter) för att lösa det, eller tryck Slumpa om.";
     saveWeekBtn.disabled = true;
   } else {
     lotteryBanner.hidden = true;

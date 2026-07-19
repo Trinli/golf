@@ -45,7 +45,7 @@
         </div>
 
         <div class="attendance-header">
-          <span>Deltagare denna vecka</span>
+          <span>Deltagare denna vecka <span id="attendance-count" class="attendance-count"></span></span>
           <div class="attendance-actions">
             <button id="select-all-btn" class="btn-link" type="button">Markera alla</button>
             <button id="select-none-btn" class="btn-link" type="button">Avmarkera alla</button>
@@ -100,22 +100,20 @@
           <input id="field-handicap" type="number" step="0.1" inputmode="decimal" required />
         </label>
 
-        <label class="field">
-          <span>Gift med</span>
-          <select id="field-spouse">
-            <option value="">Ingen</option>
-          </select>
-        </label>
+        <div class="field">
+          <span>Alltid tillsammans med</span>
+          <ul id="field-always-list" class="relation-list"></ul>
+        </div>
 
-        <label class="field" id="spouse-preference-field" hidden>
-          <span>Preferens med respektive</span>
-          <select id="field-spouse-preference">
-            <option value="apart">Hålls isär (standard)</option>
-            <option value="together">Spelar alltid tillsammans</option>
-            <option value="teeBefore">Startar före respektive</option>
-            <option value="teeAfter">Startar efter respektive</option>
-          </select>
-        </label>
+        <div class="field">
+          <span>Aldrig tillsammans med</span>
+          <ul id="field-never-list" class="relation-list"></ul>
+        </div>
+
+        <div class="field">
+          <span>Startar före</span>
+          <ul id="field-before-list" class="relation-list"></ul>
+        </div>
 
         <label class="field field-toggle">
           <span>Långsam spelare</span>

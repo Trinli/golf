@@ -13,13 +13,22 @@ const sheetTitle = document.getElementById("sheet-title");
 const playerForm = document.getElementById("player-form");
 const fieldName = document.getElementById("field-name");
 const fieldHandicap = document.getElementById("field-handicap");
-const fieldSpouse = document.getElementById("field-spouse");
-const spousePreferenceField = document.getElementById("spouse-preference-field");
-const fieldSpousePreference = document.getElementById("field-spouse-preference");
+const fieldAlwaysList = document.getElementById("field-always-list");
+const fieldNeverList = document.getElementById("field-never-list");
+const fieldBeforeList = document.getElementById("field-before-list");
 const fieldSlow = document.getElementById("field-slow");
 const fieldCart = document.getElementById("field-cart");
 const fieldTimePreference = document.getElementById("field-time-preference");
 const deleteBtn = document.getElementById("delete-btn");
+
+function addUnique(arr, id) {
+  if (!arr.includes(id)) arr.push(id);
+}
+
+function removeId(arr, id) {
+  const idx = arr.indexOf(id);
+  if (idx !== -1) arr.splice(idx, 1);
+}
 
 function loadPlayers() {
   try {
@@ -31,10 +40,51 @@ function loadPlayers() {
       }
       delete player.earlyStart;
     }
+    migrateLegacySpouseData(loaded);
     return loaded;
   } catch {
     return [];
   }
+}
+
+// Migrerar det gamla Make/maka-fältet (spouseId/spousePreference) till de fria
+// relationslistorna (alwaysWith/neverWith/startsBefore). Körs bara en gång per
+// installation eftersom de gamla fälten tas bort ur datan när migreringen är klar.
+function migrateLegacySpouseData(loaded) {
+  for (const player of loaded) {
+    if (!player.alwaysWith) player.alwaysWith = [];
+    if (!player.neverWith) player.neverWith = [];
+    if (!player.startsBefore) player.startsBefore = [];
+  }
+
+  const hasLegacy = loaded.some((p) => "spouseId" in p);
+  if (!hasLegacy) return;
+
+  const byId = new Map(loaded.map((p) => [p.id, p]));
+  for (const player of loaded) {
+    if (!player.spouseId) continue;
+    const spouse = byId.get(player.spouseId);
+    if (!spouse) continue;
+    const preference = player.spousePreference || "apart";
+    if (preference === "together") {
+      addUnique(player.alwaysWith, spouse.id);
+      addUnique(spouse.alwaysWith, player.id);
+    } else if (preference === "teeBefore") {
+      addUnique(player.startsBefore, spouse.id);
+    } else if (preference === "teeAfter") {
+      addUnique(spouse.startsBefore, player.id);
+    } else {
+      addUnique(player.neverWith, spouse.id);
+      addUnique(spouse.neverWith, player.id);
+    }
+  }
+
+  for (const player of loaded) {
+    delete player.spouseId;
+    delete player.spousePreference;
+  }
+
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(loaded));
 }
 
 function savePlayers() {
@@ -45,11 +95,9 @@ function findPlayer(id) {
   return players.find((p) => p.id === id) || null;
 }
 
-function spousePreferenceSuffix(preference) {
-  if (preference === "together") return " (alltid ihop)";
-  if (preference === "teeBefore") return " (startar före)";
-  if (preference === "teeAfter") return " (startar efter)";
-  return "";
+function relationBadgeText(label, ids) {
+  const names = ids.map((id) => findPlayer(id)?.name).filter(Boolean);
+  return names.length ? `${label}: ${names.join(", ")}` : null;
 }
 
 function render() {
@@ -73,14 +121,26 @@ function render() {
     const badges = document.createElement("div");
     badges.className = "player-badges";
 
-    if (player.spouseId) {
-      const spouse = findPlayer(player.spouseId);
-      if (spouse) {
-        const b = document.createElement("span");
-        b.className = "badge badge-spouse";
-        b.textContent = `Gift med ${spouse.name}${spousePreferenceSuffix(player.spousePreference)}`;
-        badges.appendChild(b);
-      }
+    const alwaysText = relationBadgeText("Alltid med", player.alwaysWith || []);
+    if (alwaysText) {
+      const b = document.createElement("span");
+      b.className = "badge badge-always";
+      b.textContent = alwaysText;
+      badges.appendChild(b);
+    }
+    const neverText = relationBadgeText("Aldrig med", player.neverWith || []);
+    if (neverText) {
+      const b = document.createElement("span");
+      b.className = "badge badge-never";
+      b.textContent = neverText;
+      badges.appendChild(b);
+    }
+    const beforeText = relationBadgeText("Startar före", player.startsBefore || []);
+    if (beforeText) {
+      const b = document.createElement("span");
+      b.className = "badge badge-before";
+      b.textContent = beforeText;
+      badges.appendChild(b);
     }
     if (player.slow) {
       const b = document.createElement("span");
@@ -122,20 +182,40 @@ function render() {
   playerCount.textContent = players.length === 1 ? "1 spelare" : `${players.length} spelare`;
 }
 
-function populateSpouseOptions(excludeId) {
-  fieldSpouse.innerHTML = '<option value="">Ingen</option>';
+function populateRelationChecklist(listEl, selectedIds, excludeId) {
+  listEl.innerHTML = "";
   const sorted = [...players].sort((a, b) => a.name.localeCompare(b.name, "sv"));
   for (const player of sorted) {
     if (player.id === excludeId) continue;
-    const option = document.createElement("option");
-    option.value = player.id;
-    option.textContent = player.name;
-    fieldSpouse.appendChild(option);
+    const li = document.createElement("li");
+    li.className = "relation-item";
+
+    const checkbox = document.createElement("input");
+    checkbox.type = "checkbox";
+    checkbox.value = player.id;
+    checkbox.checked = selectedIds.includes(player.id);
+
+    const name = document.createElement("span");
+    name.className = "relation-name";
+    name.textContent = player.name;
+
+    li.appendChild(checkbox);
+    li.appendChild(name);
+    li.addEventListener("click", (e) => {
+      if (e.target !== checkbox) checkbox.click();
+    });
+    listEl.appendChild(li);
   }
 }
 
-function updateSpousePreferenceVisibility() {
-  spousePreferenceField.hidden = !fieldSpouse.value;
+function getCheckedIds(listEl) {
+  return Array.from(listEl.querySelectorAll("input[type=checkbox]:checked")).map((cb) => cb.value);
+}
+
+function populateAllRelationLists(selected, excludeId) {
+  populateRelationChecklist(fieldAlwaysList, selected.always, excludeId);
+  populateRelationChecklist(fieldNeverList, selected.never, excludeId);
+  populateRelationChecklist(fieldBeforeList, selected.before, excludeId);
 }
 
 function openAddSheet() {
@@ -143,10 +223,8 @@ function openAddSheet() {
   sheetTitle.textContent = "Ny spelare";
   deleteBtn.hidden = true;
   playerForm.reset();
-  populateSpouseOptions(null);
-  fieldSpousePreference.value = "apart";
+  populateAllRelationLists({ always: [], never: [], before: [] }, null);
   fieldTimePreference.value = "none";
-  updateSpousePreferenceVisibility();
   showSheet();
 }
 
@@ -156,15 +234,15 @@ function openEditSheet(id) {
   editingId = id;
   sheetTitle.textContent = "Redigera spelare";
   deleteBtn.hidden = false;
-  populateSpouseOptions(id);
   fieldName.value = player.name;
   fieldHandicap.value = player.handicap;
-  fieldSpouse.value = player.spouseId || "";
-  fieldSpousePreference.value = player.spousePreference || "apart";
+  populateAllRelationLists(
+    { always: player.alwaysWith || [], never: player.neverWith || [], before: player.startsBefore || [] },
+    id
+  );
   fieldSlow.checked = !!player.slow;
   fieldCart.checked = !!player.cart;
   fieldTimePreference.value = player.timePreference || "none";
-  updateSpousePreferenceVisibility();
   showSheet();
 }
 
@@ -178,57 +256,64 @@ function hideSheet() {
   editingId = null;
 }
 
-function mirrorSpousePreference(preference) {
-  if (preference === "teeBefore") return "teeAfter";
-  if (preference === "teeAfter") return "teeBefore";
-  if (preference === "together") return "together";
-  return "apart";
-}
-
-function setSpouse(playerId, newSpouseId, preference) {
+// Alltid/aldrig tillsammans är ömsesidiga relationer och speglas på båda spelarna.
+// Startar-före är riktad och sparas bara på den spelare som startar tidigare.
+function applyRelations(playerId, newAlways, newNever, newBefore) {
   const player = findPlayer(playerId);
-  const oldSpouseId = player.spouseId || null;
 
-  if (oldSpouseId && oldSpouseId !== newSpouseId) {
-    const oldSpouse = findPlayer(oldSpouseId);
-    if (oldSpouse) {
-      oldSpouse.spouseId = null;
-      oldSpouse.spousePreference = "apart";
+  for (const otherId of player.alwaysWith) {
+    if (!newAlways.includes(otherId)) {
+      const other = findPlayer(otherId);
+      if (other) removeId(other.alwaysWith, playerId);
     }
   }
-
-  if (newSpouseId) {
-    const newSpouse = findPlayer(newSpouseId);
-    if (newSpouse && newSpouse.spouseId && newSpouse.spouseId !== playerId) {
-      const theirOldSpouse = findPlayer(newSpouse.spouseId);
-      if (theirOldSpouse) {
-        theirOldSpouse.spouseId = null;
-        theirOldSpouse.spousePreference = "apart";
-      }
-    }
-    if (newSpouse) {
-      newSpouse.spouseId = playerId;
-      newSpouse.spousePreference = mirrorSpousePreference(preference);
-    }
-    player.spousePreference = preference || "apart";
-  } else {
-    player.spousePreference = "apart";
+  for (const otherId of newAlways) {
+    const other = findPlayer(otherId);
+    if (other) addUnique(other.alwaysWith, playerId);
   }
+  player.alwaysWith = [...newAlways];
 
-  player.spouseId = newSpouseId || null;
+  for (const otherId of player.neverWith) {
+    if (!newNever.includes(otherId)) {
+      const other = findPlayer(otherId);
+      if (other) removeId(other.neverWith, playerId);
+    }
+  }
+  for (const otherId of newNever) {
+    const other = findPlayer(otherId);
+    if (other) addUnique(other.neverWith, playerId);
+  }
+  player.neverWith = [...newNever];
+
+  player.startsBefore = [...newBefore];
 }
 
 playerForm.addEventListener("submit", (e) => {
   e.preventDefault();
   const name = fieldName.value.trim();
   const handicap = parseFloat(fieldHandicap.value);
-  const spouseId = fieldSpouse.value || null;
-  const spousePreference = fieldSpousePreference.value;
   const slow = fieldSlow.checked;
   const cart = fieldCart.checked;
   const timePreference = fieldTimePreference.value;
 
   if (!name || Number.isNaN(handicap)) return;
+
+  const id = editingId || crypto.randomUUID();
+  const always = getCheckedIds(fieldAlwaysList);
+  const never = getCheckedIds(fieldNeverList);
+  const before = getCheckedIds(fieldBeforeList);
+
+  const overlapId = always.find((pid) => never.includes(pid) || before.includes(pid)) || never.find((pid) => before.includes(pid));
+  if (overlapId) {
+    alert(`${findPlayer(overlapId)?.name || "En spelare"} kan bara ha en relationstyp (alltid/aldrig/startar före) mot samma spelare.`);
+    return;
+  }
+
+  const cycleId = before.find((pid) => findPlayer(pid)?.startsBefore.includes(id));
+  if (cycleId) {
+    alert(`${findPlayer(cycleId).name} har redan "startar före" satt mot den här spelaren — kan inte gälla åt båda hållen.`);
+    return;
+  }
 
   if (editingId) {
     const player = findPlayer(editingId);
@@ -237,12 +322,11 @@ playerForm.addEventListener("submit", (e) => {
     player.slow = slow;
     player.cart = cart;
     player.timePreference = timePreference;
-    setSpouse(editingId, spouseId, spousePreference);
   } else {
-    const id = crypto.randomUUID();
-    players.push({ id, name, handicap, spouseId: null, spousePreference: "apart", slow, cart, timePreference });
-    setSpouse(id, spouseId, spousePreference);
+    players.push({ id, name, handicap, alwaysWith: [], neverWith: [], startsBefore: [], slow, cart, timePreference });
   }
+
+  applyRelations(id, always, never, before);
 
   savePlayers();
   render();
@@ -254,12 +338,10 @@ deleteBtn.addEventListener("click", () => {
   const player = findPlayer(editingId);
   if (!confirm(`Ta bort ${player.name}?`)) return;
 
-  if (player.spouseId) {
-    const spouse = findPlayer(player.spouseId);
-    if (spouse) {
-      spouse.spouseId = null;
-      spouse.spousePreference = "apart";
-    }
+  for (const p of players) {
+    removeId(p.alwaysWith, editingId);
+    removeId(p.neverWith, editingId);
+    removeId(p.startsBefore, editingId);
   }
   players = players.filter((p) => p.id !== editingId);
   savePlayers();
@@ -269,7 +351,6 @@ deleteBtn.addEventListener("click", () => {
 
 document.getElementById("add-player-btn").addEventListener("click", openAddSheet);
 document.getElementById("cancel-btn").addEventListener("click", hideSheet);
-fieldSpouse.addEventListener("change", updateSpousePreferenceVisibility);
 sheetBackdrop.addEventListener("click", (e) => {
   if (e.target === sheetBackdrop) hideSheet();
 });

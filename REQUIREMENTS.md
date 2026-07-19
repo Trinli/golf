@@ -2,7 +2,7 @@
 
 ## 1. Syfte
 
-Ungefär 30 spelare deltar i en återkommande golfaktivitet (t.ex. varje vecka). Grupperna (flighter) lottas manuellt idag, vilket är tidskrävande och gör det svårt att hålla koll på regler som gifta par, handicaptak och variation mellan veckorna. Detta program ska automatisera lottningen så att den:
+Ungefär 30 spelare deltar i en återkommande golfaktivitet (t.ex. varje vecka). Grupperna (flighter) lottas manuellt idag, vilket är tidskrävande och gör det svårt att hålla koll på regler som vilka spelare som ska eller inte ska spela ihop, handicaptak och variation mellan veckorna. Detta program ska automatisera lottningen så att den:
 
 - respekterar hårda regler (aldrig bryts),
 - gör ett bästa möjliga försök att uppfylla mjuka regler (prioritetsordning vid konflikt),
@@ -20,17 +20,19 @@ Detta dokument beskriver **vad** programmet ska göra, inte hur det ska byggas (
 | Spelvecka | Ett enskilt lottningstillfälle med en lista av anmälda spelare |
 | Säsong | Perioden över vilken flera spelveckor räknas för rotationshistorik |
 | Golfbil | Elbil (cart) som två spelare kan dela under rundan |
+| Spelarrelation | En regel mellan två specifika spelare: alltid tillsammans, aldrig tillsammans, eller startordning (den ena startar alltid före den andra) |
 
 ## 3. Datamodell
 
 ### Spelare
 - Namn / spelar-ID
 - Handicap (numeriskt)
-- Make/maka-koppling — referens till en annan spelares ID
-- Preferens för gift par (per koppling, gäller båda i paret symmetriskt):
-  - **Hålls isär** (standard) — får aldrig hamna i samma flight
-  - **Spelar alltid tillsammans** — ska alltid hamna i samma flight (undantag från standardregeln, för par som själva vill spela ihop)
-  - **Startar före / startar efter respektive** — hålls isär som standard, men den ena ska alltid hamna i en tidigare flight än den andra (för par som t.ex. samåker och vill kunna värma upp i olika ordning)
+- Relationer till andra spelare — en spelare kan ha flera relationer, till olika spelare (listor med spelar-referenser):
+  - **Alltid tillsammans med** — dessa spelare ska alltid hamna i samma flight som denna spelare (ömsesidigt — gäller automatiskt åt båda hållen)
+  - **Aldrig tillsammans med** — dessa spelare får aldrig hamna i samma flight som denna spelare (ömsesidigt — gäller automatiskt åt båda hållen)
+  - **Startar före** — dessa spelare ska denna spelare alltid hamna i en tidigare flight än (motsatsen, "startar efter", gäller automatiskt för den andra spelaren i relationen)
+  
+  Samma par av spelare kan bara ha en av dessa tre relationstyper mellan sig åt gången (t.ex. inte både "alltid tillsammans" och "aldrig tillsammans" mellan samma två spelare).
 - Flagga: "långsam spelare" (manuellt satt av admin)
 - Flagga: "behöver golfbil" (manuellt satt av admin)
 - Starttidspreferens (manuellt satt av admin): **Ingen preferens** (standard) / **Vill starta tidigt** / **Vill starta sent** — spelaren bör hamna i en av de tidigare respektive senare flighterna
@@ -49,9 +51,9 @@ Not: "Behöver golfbil" avser golfbil (cart) under rundan, inte skjuts till bana
 ## 4. Regler
 
 ### 4.1 Hårda krav (får aldrig brytas)
-1. **Gifta par isär** — två spelare som är kopplade som gift par, och vars preferens är "hålls isär" (standard) eller "startar före/efter", får aldrig hamna i samma flight.
-2. **Gifta par som alltid ska spela ihop** — spelare med preferensen "spelar alltid tillsammans" måste alltid hamna i samma flight.
-3. **Startordning för par med den preferensen** — om en spelare har preferensen "startar före respektive" måste den spelaren alltid hamna i en tidigare flight (lägre flight-nummer) än sin respektive.
+1. **Aldrig tillsammans** — två spelare med relationen "aldrig tillsammans" får aldrig hamna i samma flight.
+2. **Alltid tillsammans** — två spelare med relationen "alltid tillsammans" måste alltid hamna i samma flight.
+3. **Startordning** — om en spelare har relationen "startar före" till en annan spelare, måste den förstnämnda alltid hamna i en tidigare flight (lägre flight-nummer) än den andra.
 4. **Handicaptak** — summan av handicap för spelarna i en flight får aldrig överstiga 110.
 5. **Flightstorlek** — flighter ska normalt bestå av 3 spelare. Om antalet anmälda inte är jämnt delbart med 3, se avsnitt 6.
 
@@ -66,9 +68,9 @@ Vid konflikt mellan mjuka krav gäller denna ordning, högst prioritet först:
 4. **Rotation / variation** — lottningen ska minimera antalet gånger samma två spelare hamnar i samma flight, sett över säsongens historik. Om flera lottningar uppfyller kraven ovan lika bra väljs den som ger mest variation jämfört med tidigare veckor.
 
 Fullständig prioritetsordning vid konflikt (hög till låg):
-**Gifta par isär / ihop / startordning → Handicaptak → Golfbilsdelning → Starttidspreferens → Undvik långsamma ihop → Rotation/variation**
+**Aldrig/alltid tillsammans / startordning → Handicaptak → Golfbilsdelning → Starttidspreferens → Undvik långsamma ihop → Rotation/variation**
 
-De fyra första (gifta par-reglerna och handicaptaket) är absoluta krav och får aldrig kompromissas. De fyra sista löses i angiven ordning — om det är omöjligt att uppfylla alla samtidigt prioriteras det som står högst.
+De fyra första (spelarrelationerna och handicaptaket) är absoluta krav och får aldrig kompromissas. De fyra sista löses i angiven ordning — om det är omöjligt att uppfylla alla samtidigt prioriteras det som står högst.
 
 ## 5. Output
 
@@ -91,19 +93,39 @@ Namn 6
 
 Starttiden för den första flighten väljs av användaren i lottningsfliken (ett tidsfält bredvid datumfältet, förvalt till 09:00) och kan ändras för varje spelvecka. Mottagarfältet lämnas tomt — användaren väljer mottagare själv varje gång. Funktionen gäller den aktuella lottningen (inte historiska veckor).
 
+### Antal valda spelare
+
+Vid val av vilka spelare som deltar en given vecka (i lottningsfliken) ska gränssnittet visa hur många spelare som är valda, i formatet "X av Y valda" (X = antal markerade denna vecka, Y = totalt antal spelare i registret), t.ex. "Deltagare denna vecka (14 av 28 valda)". Antalet ska uppdateras direkt när en spelare markeras eller avmarkeras (inklusive vid "Markera alla" / "Avmarkera alla").
+
 ## 6. Beslutade edge cases
 
 - **Ojämnt antal anmälda**: Om antalet anmälda inte är jämnt delbart med 3 skapas en flight med 4 spelare (om resten är 1) eller en flight med 2 spelare (om resten är 2), övriga flighter har 3 spelare.
 - **Udda antal golfbils-flaggade i en flight**: Bästa möjliga parning — lottningen försöker minimera antalet flighter med ett udda antal golfbils-flaggade spelare, men en ensam spelare utan bilpartner är tillåtet om det inte går att undvika.
-- **Omöjlig flight pga. handicaptak eller gifta par-regler**: Lottningen sparas aldrig om något hårt krav bryts (handicaptak, gifta par som ska hållas isär/ihop, eller startordning för ett par). Om ingen giltig lösning hittas automatiskt flaggas det tydligt i gränssnittet, och admin får byta plats på spelare manuellt (tryck-för-att-byta-plats) tills det är giltigt.
+- **Omöjlig flight pga. handicaptak eller spelarrelationer**: Lottningen sparas aldrig om något hårt krav bryts (handicaptak, spelare som ska hållas isär/ihop, eller startordning mellan spelare). Om ingen giltig lösning hittas automatiskt flaggas det tydligt i gränssnittet, och admin får byta plats på spelare manuellt (tryck-för-att-byta-plats) tills det är giltigt.
+- **Motstridiga relationer**: Om relationerna mellan spelare skapar en omöjlig situation (t.ex. en kedja av "alltid tillsammans"-relationer som omfattar fler spelare än flightstorleken tillåter, eller relationer som annars gör en giltig lottning omöjlig) flaggas detta tydligt i gränssnittet, på samma sätt som andra omöjliga flighter ovan.
 
-## 7. Icke-mål (för denna fas)
+## 7. Migrering av tidigare data
 
-- Inget användargränssnitt
+Tidigare version av datamodellen använde ett Make/maka-fält med en enda koppling per spelare och en preferens (hålls isär / spelar alltid tillsammans / startar före/efter respektive). Detta fält ersätts av de fria relationslistorna i avsnitt 3.
+
+Första gången den nya versionen av appen körs ska befintlig sparad spelardata migreras automatiskt till det nya formatet:
+- Preferens "hålls isär" (standard) → migreras till relationen "aldrig tillsammans" mellan de två kopplade spelarna.
+- Preferens "spelar alltid tillsammans" → migreras till relationen "alltid tillsammans".
+- Preferens "startar före respektive" → migreras till relationen "startar före", med samma riktning som tidigare.
+
+Efter migreringen sparas data enbart i det nya formatet — Make/maka-fältet och den gamla preferensen tas bort och skrivs inte längre till lagringen. Migreringen ska bara köras en gång per installation (t.ex. styrd av en versionsflagga i den sparade datan) och ska inte köras om vid varje appstart.
+
+## 8. Icke-mål
+
 - Ingen inloggning/behörighetshantering
-- Ingen integration mot externt handicapsystem (handicap matas in manuellt eller importeras separat)
-- Ren regel-/datamodell och lottningslogik — inte en färdig applikation
+- Ingen integration mot externt handicapsystem (handicap matas in manuellt eller importeras via fil)
+- Ingen backend/server — appen körs helt i webbläsaren (HTML/JS), data sparas lokalt
 
-## 8. Framtida steg
+## 9. Status och framtida steg
 
-Nästa fas är att implementera själva lottningsprogrammet som realiserar reglerna ovan. Val av språk/plattform är inte bestämt ännu.
+Grundapplikationen (spelarregister, lottningslogik för hårda/mjuka krav, historik/rotation, delning via mail) är implementerad som en webbapp (`index.html`, `app.js`, `lottery.js`, `styles.css`) som körs helt i webbläsaren.
+
+Kvarstående steg utifrån detta dokuments senaste ändringar:
+- Implementera relationsmodellen i avsnitt 3 (alltid/aldrig tillsammans, startordning) i kodbasen, som ersättning för dagens `spouseId`/`spousePreference`-fält i `app.js` och `lottery.js`.
+- Implementera engångsmigreringen beskriven i avsnitt 7.
+- Implementera räknaren "X av Y valda" beskriven i avsnitt 5.

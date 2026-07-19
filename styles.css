@@ -12,8 +12,12 @@
   --badge-slow-text: #b3261e;
   --badge-cart-bg: #eaf3ec;
   --badge-cart-text: #1c7a4d;
-  --badge-spouse-bg: #eef0fb;
-  --badge-spouse-text: #3b4bb0;
+  --badge-always-bg: #eef0fb;
+  --badge-always-text: #3b4bb0;
+  --badge-never-bg: #fbe9ef;
+  --badge-never-text: #b3265e;
+  --badge-before-bg: #e6f7f5;
+  --badge-before-text: #0f766e;
   --badge-early-bg: #fef3e6;
   --badge-early-text: #b25e09;
   --badge-late-bg: #e8eefc;
@@ -36,8 +40,12 @@
     --badge-slow-text: #ff8a80;
     --badge-cart-bg: #1e2f22;
     --badge-cart-text: #6fe0a0;
-    --badge-spouse-bg: #21243d;
-    --badge-spouse-text: #9aa5f5;
+    --badge-always-bg: #21243d;
+    --badge-always-text: #9aa5f5;
+    --badge-never-bg: #3a2030;
+    --badge-never-text: #ff8fc0;
+    --badge-before-bg: #123a37;
+    --badge-before-text: #5eead4;
     --badge-early-bg: #3a2c18;
     --badge-early-text: #f5b56a;
     --badge-late-bg: #182338;
@@ -174,9 +182,19 @@ main {
   color: var(--badge-cart-text);
 }
 
-.badge-spouse {
-  background: var(--badge-spouse-bg);
-  color: var(--badge-spouse-text);
+.badge-always {
+  background: var(--badge-always-bg);
+  color: var(--badge-always-text);
+}
+
+.badge-never {
+  background: var(--badge-never-bg);
+  color: var(--badge-never-text);
+}
+
+.badge-before {
+  background: var(--badge-before-bg);
+  color: var(--badge-before-text);
 }
 
 .badge-early {
@@ -325,6 +343,42 @@ main {
   min-height: 44px;
 }
 
+.relation-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  max-height: 160px;
+  overflow-y: auto;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--surface);
+}
+
+.relation-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 9px 12px;
+  min-height: 40px;
+  border-bottom: 1px solid var(--border);
+  cursor: pointer;
+}
+
+.relation-item:last-child {
+  border-bottom: none;
+}
+
+.relation-item input[type="checkbox"] {
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
+}
+
+.relation-name {
+  font-size: 15px;
+  color: var(--text);
+}
+
 .field-toggle {
   flex-direction: row;
   align-items: center;
@@ -407,6 +461,11 @@ main {
 .attendance-actions {
   display: flex;
   gap: 14px;
+}
+
+.attendance-count {
+  font-weight: 400;
+  color: var(--text-secondary);
 }
 
 .btn-link {
