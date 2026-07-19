@@ -1,5 +1,6 @@
 const WEEKS_STORAGE_KEY = "golf-weeks";
 const HANDICAP_CAP = 110;
+const MAX_NEAR_DISTANCE = 3; // för relationen "inom tre flighter"
 
 let weeks = loadWeeks();
 let attendingIds = new Set();
@@ -136,6 +137,11 @@ function evaluate(groupOf, attendees, groupSizes, pairHistory) {
       if (j === undefined) continue;
       if (groupOf[i] >= groupOf[j]) hardViolations += 1;
     }
+    for (const otherId of player.nearWith || []) {
+      const j = idToIndex.get(otherId);
+      if (j === undefined) continue;
+      if (Math.abs(groupOf[i] - groupOf[j]) > MAX_NEAR_DISTANCE) hardViolations += 1;
+    }
   }
 
   const total =
@@ -175,6 +181,14 @@ function getViolatingPlayerIds(attendees, groupOf) {
       const j = idToIndex.get(otherId);
       if (j === undefined) continue;
       if (groupOf[i] >= groupOf[j]) {
+        violating.add(player.id);
+        violating.add(attendees[j].id);
+      }
+    }
+    for (const otherId of player.nearWith || []) {
+      const j = idToIndex.get(otherId);
+      if (j === undefined) continue;
+      if (Math.abs(groupOf[i] - groupOf[j]) > MAX_NEAR_DISTANCE) {
         violating.add(player.id);
         violating.add(attendees[j].id);
       }
@@ -417,7 +431,7 @@ function renderResult() {
   if (stats.hardViolations > 0) {
     lotteryBanner.hidden = false;
     lotteryBanner.textContent =
-      "Kan inte sparas: en eller flera flighter bryter mot handicaptaket på 110, spelare som aldrig eller alltid ska vara tillsammans, eller startordningen mellan spelare. Byt plats på spelare (tryck på två i olika flighter) för att lösa det, eller tryck Slumpa om.";
+      "Kan inte sparas: en eller flera flighter bryter mot handicaptaket på 110, spelare som aldrig eller alltid ska vara tillsammans, startordningen mellan spelare, eller flightavståndet mellan spelare. Byt plats på spelare (tryck på två i olika flighter) för att lösa det, eller tryck Slumpa om.";
     saveWeekBtn.disabled = true;
   } else {
     lotteryBanner.hidden = true;

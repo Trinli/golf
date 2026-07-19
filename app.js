@@ -10,6 +10,7 @@ const RELATION_TYPE_LABELS = {
   never: "Aldrig tillsammans",
   before: "Startar före",
   after: "Startar efter",
+  near: "Inom tre flighter",
 };
 
 const playerList = document.getElementById("player-list");
@@ -68,6 +69,7 @@ function migrateLegacySpouseData(loaded) {
     if (!player.alwaysWith) player.alwaysWith = [];
     if (!player.neverWith) player.neverWith = [];
     if (!player.startsBefore) player.startsBefore = [];
+    if (!player.nearWith) player.nearWith = [];
   }
 
   const hasLegacy = loaded.some((p) => "spouseId" in p);
@@ -118,6 +120,7 @@ function getPlayerRelations(playerId) {
   for (const id of player.alwaysWith || []) relations.push({ playerId: id, type: "always" });
   for (const id of player.neverWith || []) relations.push({ playerId: id, type: "never" });
   for (const id of player.startsBefore || []) relations.push({ playerId: id, type: "before" });
+  for (const id of player.nearWith || []) relations.push({ playerId: id, type: "near" });
   for (const other of players) {
     if (other.id === playerId) continue;
     if ((other.startsBefore || []).includes(playerId)) {
@@ -148,13 +151,13 @@ function render() {
     const badges = document.createElement("div");
     badges.className = "player-badges";
 
-    const grouped = { always: [], never: [], before: [], after: [] };
+    const grouped = { always: [], never: [], before: [], after: [], near: [] };
     for (const rel of getPlayerRelations(player.id)) {
       const other = findPlayer(rel.playerId);
       if (other) grouped[rel.type].push(other.name);
     }
-    const badgeClasses = { always: "badge-always", never: "badge-never", before: "badge-before", after: "badge-after" };
-    for (const type of ["always", "never", "before", "after"]) {
+    const badgeClasses = { always: "badge-always", never: "badge-never", before: "badge-before", after: "badge-after", near: "badge-near" };
+    for (const type of ["always", "never", "before", "after", "near"]) {
       if (grouped[type].length === 0) continue;
       const b = document.createElement("span");
       b.className = `badge ${badgeClasses[type]}`;
@@ -361,6 +364,7 @@ function getOrCreateEditingPlayer() {
     alwaysWith: [],
     neverWith: [],
     startsBefore: [],
+    nearWith: [],
     slow: fieldSlow.checked,
     cart: fieldCart.checked,
     timePreference: fieldTimePreference.value,
@@ -388,6 +392,7 @@ function applyRelations(playerId, relations) {
   const newNever = relations.filter((r) => r.type === "never").map((r) => r.playerId);
   const newBefore = relations.filter((r) => r.type === "before").map((r) => r.playerId);
   const newAfterTargets = relations.filter((r) => r.type === "after").map((r) => r.playerId);
+  const newNear = relations.filter((r) => r.type === "near").map((r) => r.playerId);
 
   for (const otherId of player.alwaysWith) {
     if (!newAlways.includes(otherId)) {
@@ -412,6 +417,18 @@ function applyRelations(playerId, relations) {
     if (other) addUnique(other.neverWith, playerId);
   }
   player.neverWith = [...newNever];
+
+  for (const otherId of player.nearWith) {
+    if (!newNear.includes(otherId)) {
+      const other = findPlayer(otherId);
+      if (other) removeId(other.nearWith, playerId);
+    }
+  }
+  for (const otherId of newNear) {
+    const other = findPlayer(otherId);
+    if (other) addUnique(other.nearWith, playerId);
+  }
+  player.nearWith = [...newNear];
 
   player.startsBefore = [...newBefore];
 
@@ -470,6 +487,7 @@ deleteBtn.addEventListener("click", () => {
     removeId(p.alwaysWith, editingId);
     removeId(p.neverWith, editingId);
     removeId(p.startsBefore, editingId);
+    removeId(p.nearWith, editingId);
   }
   players = players.filter((p) => p.id !== editingId);
   savePlayers();
