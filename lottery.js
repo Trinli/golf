@@ -1,8 +1,20 @@
 const WEEKS_STORAGE_KEY = "golf-weeks";
+const PRIORITY_STORAGE_KEY = "golf-priority-config";
 const HANDICAP_CAP = 110;
 const MAX_NEAR_DISTANCE = 3; // för relationen "inom tre flighter"
 
+// De mjuka kriterierna som går att prioritera om / göra hårda i Inställningar-fliken.
+// Ordningen här är standardordningen (och den ursprungliga, hårdkodade prioritetsordningen).
+const PRIORITY_CRITERIA = [
+  { id: "cart", label: "Golfbilsdelning" },
+  { id: "gender", label: "Kvinnor ihop" },
+  { id: "time", label: "Starttidspreferens" },
+  { id: "slow", label: "Undvik långsamma ihop" },
+  { id: "rotation", label: "Rotation / variation" },
+];
+
 let weeks = loadWeeks();
+let priorityConfig = loadPriorityConfig();
 let attendingIds = new Set();
 let currentResult = null; // { attendees: [player,...], groupSizes: [...], groupOf: [...] }
 let selectedChipIndex = null;
@@ -14,7 +26,12 @@ const tabButtons = document.querySelectorAll(".tab-btn");
 const tabPanels = {
   players: document.getElementById("tab-players"),
   lottery: document.getElementById("tab-lottery"),
+  settings: document.getElementById("tab-settings"),
 };
+
+const priorityHardList = document.getElementById("priority-hard-list");
+const prioritySoftList = document.getElementById("priority-soft-list");
+const priorityResetBtn = document.getElementById("priority-reset-btn");
 
 const lotteryDate = document.getElementById("lottery-date");
 const lotteryStartTime = document.getElementById("lottery-start-time");
@@ -45,6 +62,35 @@ function loadWeeks() {
 
 function saveWeeks() {
   localStorage.setItem(WEEKS_STORAGE_KEY, JSON.stringify(weeks));
+}
+
+function defaultPriorityConfig() {
+  return PRIORITY_CRITERIA.map((c) => ({ id: c.id, hard: false }));
+}
+
+// Läser sparad prioritetskonfiguration, men skyddar mot skadad eller föråldrad
+// data (t.ex. om ett kriterium tas bort eller läggs till i en framtida version) —
+// okända id:n plockas bort, saknade läggs till som mjuka, i standardordning.
+function loadPriorityConfig() {
+  try {
+    const raw = localStorage.getItem(PRIORITY_STORAGE_KEY);
+    if (!raw) return defaultPriorityConfig();
+    const parsed = JSON.parse(raw);
+    if (!Array.isArray(parsed)) return defaultPriorityConfig();
+
+    const validIds = new Set(PRIORITY_CRITERIA.map((c) => c.id));
+    const cleaned = parsed.filter((c) => c && validIds.has(c.id)).map((c) => ({ id: c.id, hard: !!c.hard }));
+    for (const criterion of PRIORITY_CRITERIA) {
+      if (!cleaned.some((c) => c.id === criterion.id)) cleaned.push({ id: criterion.id, hard: false });
+    }
+    return cleaned;
+  } catch {
+    return defaultPriorityConfig();
+  }
+}
+
+function savePriorityConfig() {
+  localStorage.setItem(PRIORITY_STORAGE_KEY, JSON.stringify(priorityConfig));
 }
 
 function pairKey(id1, id2) {
@@ -148,14 +194,42 @@ function evaluate(groupOf, attendees, groupSizes, pairHistory) {
     }
   }
 
-  const total =
-    hardViolations * 1_000_000 +
-    cartPenalty * 100_000 +
-    genderPenalty * 10_000 +
-    timePreferencePenalty * 1_000 +
-    slowPenalty * 100 +
-    repeatPenalty;
-  return { total, hardViolations, cartPenalty, genderPenalty, timePreferencePenalty, slowPenalty, repeatPenalty };
+  // Mjuka kriteriers vikter (och om de räknas som hårda krav istället) styrs av
+  // priorityConfig, som admin kan ändra i Inställningar-fliken. Ett kriterium som
+  // flyttats till "Hårt krav" läggs rakt in i hardViolations — samma spärr och
+  // "Kan inte sparas"-varning som redan gäller handicaptak och spelarrelationer.
+  const softCounts = {
+    cart: cartPenalty,
+    gender: genderPenalty,
+    time: timePreferencePenalty,
+    slow: slowPenalty,
+    rotation: repeatPenalty,
+  };
+
+  let effectiveHardViolations = hardViolations;
+  let total = hardViolations * 1_000_000;
+  let softRank = 0;
+  for (const entry of priorityConfig) {
+    const count = softCounts[entry.id] || 0;
+    if (entry.hard) {
+      effectiveHardViolations += count;
+      total += count * 1_000_000;
+    } else {
+      const weight = 100_000 / Math.pow(5, softRank);
+      total += count * weight;
+      softRank += 1;
+    }
+  }
+
+  return {
+    total,
+    hardViolations: effectiveHardViolations,
+    cartPenalty,
+    genderPenalty,
+    timePreferencePenalty,
+    slowPenalty,
+    repeatPenalty,
+  };
 }
 
 function getViolatingPlayerIds(attendees, groupOf) {
@@ -265,6 +339,7 @@ function switchTab(tab) {
   }
   tabPanels.players.hidden = tab !== "players";
   tabPanels.lottery.hidden = tab !== "lottery";
+  tabPanels.settings.hidden = tab !== "settings";
   addPlayerBtn.hidden = tab !== "players";
   playersFooter.hidden = tab !== "players";
 
@@ -272,7 +347,111 @@ function switchTab(tab) {
     renderAttendanceList();
     renderHistory();
   }
+  if (tab === "settings") {
+    renderPrioritySettings();
+  }
 }
+
+function renderPrioritySettings() {
+  priorityHardList.innerHTML = "";
+  prioritySoftList.innerHTML = "";
+
+  const hardItems = priorityConfig.filter((c) => c.hard);
+  const softItems = priorityConfig.filter((c) => !c.hard);
+
+  for (const entry of hardItems) {
+    priorityHardList.appendChild(buildPriorityRow(entry, false, false, false));
+  }
+  if (hardItems.length === 0) {
+    const empty = document.createElement("li");
+    empty.className = "priority-empty";
+    empty.textContent = "Inga — bara handicaptak och spelarrelationer är hårda krav just nu.";
+    priorityHardList.appendChild(empty);
+  }
+
+  softItems.forEach((entry, i) => {
+    prioritySoftList.appendChild(buildPriorityRow(entry, true, i > 0, i < softItems.length - 1));
+  });
+}
+
+function buildPriorityRow(entry, showMove, canMoveUp, canMoveDown) {
+  const criterion = PRIORITY_CRITERIA.find((c) => c.id === entry.id);
+  const li = document.createElement("li");
+  li.className = "priority-item";
+
+  const label = document.createElement("span");
+  label.className = "priority-label";
+  label.textContent = criterion.label;
+  li.appendChild(label);
+
+  const controls = document.createElement("div");
+  controls.className = "priority-controls";
+
+  if (showMove) {
+    const upBtn = document.createElement("button");
+    upBtn.type = "button";
+    upBtn.className = "priority-move-btn";
+    upBtn.textContent = "↑";
+    upBtn.disabled = !canMoveUp;
+    upBtn.setAttribute("aria-label", `Flytta ${criterion.label} upp`);
+    upBtn.addEventListener("click", () => movePriority(entry.id, -1));
+    controls.appendChild(upBtn);
+
+    const downBtn = document.createElement("button");
+    downBtn.type = "button";
+    downBtn.className = "priority-move-btn";
+    downBtn.textContent = "↓";
+    downBtn.disabled = !canMoveDown;
+    downBtn.setAttribute("aria-label", `Flytta ${criterion.label} ner`);
+    downBtn.addEventListener("click", () => movePriority(entry.id, 1));
+    controls.appendChild(downBtn);
+  }
+
+  const toggleLabel = document.createElement("label");
+  toggleLabel.className = "priority-hard-toggle";
+  const checkbox = document.createElement("input");
+  checkbox.type = "checkbox";
+  checkbox.checked = entry.hard;
+  checkbox.addEventListener("change", () => setPriorityHard(entry.id, checkbox.checked));
+  toggleLabel.appendChild(checkbox);
+  toggleLabel.appendChild(document.createTextNode("Hårt krav"));
+  controls.appendChild(toggleLabel);
+
+  li.appendChild(controls);
+  return li;
+}
+
+function movePriority(id, direction) {
+  const hardItems = priorityConfig.filter((c) => c.hard);
+  const softItems = priorityConfig.filter((c) => !c.hard);
+  const idx = softItems.findIndex((c) => c.id === id);
+  const newIdx = idx + direction;
+  if (idx === -1 || newIdx < 0 || newIdx >= softItems.length) return;
+  [softItems[idx], softItems[newIdx]] = [softItems[newIdx], softItems[idx]];
+  priorityConfig = [...hardItems, ...softItems];
+  savePriorityConfig();
+  renderPrioritySettings();
+}
+
+function setPriorityHard(id, hard) {
+  const entry = priorityConfig.find((c) => c.id === id);
+  if (!entry) return;
+  entry.hard = hard;
+  // Bygg om listan så hårda krav grupperas för sig och mjuka behåller sin
+  // inbördes ordning — annars spelar ordningen på hård-flaggade poster ingen roll.
+  const hardItems = priorityConfig.filter((c) => c.hard);
+  const softItems = priorityConfig.filter((c) => !c.hard);
+  priorityConfig = [...hardItems, ...softItems];
+  savePriorityConfig();
+  renderPrioritySettings();
+}
+
+priorityResetBtn.addEventListener("click", () => {
+  if (!confirm("Återställa prioritetsordningen till standard?")) return;
+  priorityConfig = defaultPriorityConfig();
+  savePriorityConfig();
+  renderPrioritySettings();
+});
 
 function updateAttendanceCount() {
   attendanceCount.textContent = `(${attendingIds.size} av ${players.length} valda)`;
@@ -436,7 +615,7 @@ function renderResult() {
   if (stats.hardViolations > 0) {
     lotteryBanner.hidden = false;
     lotteryBanner.textContent =
-      "Kan inte sparas: en eller flera flighter bryter mot handicaptaket på 110, spelare som aldrig eller alltid ska vara tillsammans, startordningen mellan spelare, eller flightavståndet mellan spelare. Byt plats på spelare (tryck på två i olika flighter) för att lösa det, eller tryck Slumpa om.";
+      "Kan inte sparas: en eller flera flighter bryter mot handicaptaket på 110, spelare som aldrig eller alltid ska vara tillsammans, startordningen eller flightavståndet mellan spelare, eller ett kriterium som gjorts till hårt krav i Inställningar. Byt plats på spelare (tryck på två i olika flighter) för att lösa det, eller tryck Slumpa om.";
     saveWeekBtn.disabled = true;
   } else {
     lotteryBanner.hidden = true;

@@ -786,3 +786,93 @@ main {
   color: var(--text-secondary);
   line-height: 1.6;
 }
+
+/* Settings / priority configuration */
+
+.settings-section {
+  margin-bottom: 40px;
+}
+
+.settings-section h2 {
+  font-size: 18px;
+  margin: 0 0 8px;
+}
+
+.settings-section h3 {
+  font-size: 14px;
+  color: var(--text-secondary);
+  margin: 24px 0 10px;
+}
+
+.priority-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.priority-item {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 10px 14px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.priority-label {
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.priority-controls {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.priority-move-btn {
+  appearance: none;
+  border: 1px solid var(--border);
+  background: var(--bg);
+  color: var(--text);
+  border-radius: 8px;
+  font-size: 16px;
+  min-width: 36px;
+  min-height: 36px;
+  cursor: pointer;
+}
+
+.priority-move-btn:disabled {
+  opacity: 0.3;
+  cursor: default;
+}
+
+.priority-hard-toggle {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  color: var(--text-secondary);
+  white-space: nowrap;
+}
+
+.priority-hard-toggle input[type="checkbox"] {
+  width: 20px;
+  height: 20px;
+}
+
+.priority-empty {
+  color: var(--text-secondary);
+  font-size: 13px;
+  font-style: italic;
+}
+
+#priority-reset-btn {
+  margin-top: 20px;
+}

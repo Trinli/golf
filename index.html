@@ -23,6 +23,7 @@
   <nav class="tabs">
     <button class="tab-btn active" data-tab="players">Spelare</button>
     <button class="tab-btn" data-tab="lottery">Lottning</button>
+    <button class="tab-btn" data-tab="settings">Inställningar</button>
   </nav>
 
   <main>
@@ -71,6 +72,21 @@
         <h2>Tidigare veckor</h2>
         <p id="history-empty" class="empty-state" hidden>Inga sparade veckor ännu.</p>
         <ul id="history-list" class="history-list"></ul>
+      </div>
+    </section>
+
+    <section id="tab-settings" class="tab-panel" hidden>
+      <div class="settings-section">
+        <h2>Prioritering av mjuka krav</h2>
+        <p class="hint">Flytta kriterier med pilarna för att ändra i vilken ordning de prioriteras vid konflikt. Kryssa i "Hårt krav" för att göra ett kriterium till ett absolut krav som lottningen aldrig får bryta mot (precis som handicaptaket och spelarrelationerna).</p>
+
+        <h3>Hårda krav (får aldrig brytas)</h3>
+        <ul id="priority-hard-list" class="priority-list"></ul>
+
+        <h3>Mjuka krav (prioritetsordning, högst först)</h3>
+        <ul id="priority-soft-list" class="priority-list"></ul>
+
+        <button id="priority-reset-btn" class="btn btn-secondary" type="button">Återställ till standard</button>
       </div>
     </section>
   </main>

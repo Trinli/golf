@@ -76,6 +76,13 @@ Fullständig prioritetsordning vid konflikt (hög till låg):
 
 De fem första (spelarrelationerna och handicaptaket) är absoluta krav och får aldrig kompromissas. De fem sista löses i angiven ordning — om det är omöjligt att uppfylla alla samtidigt prioriteras det som står högst.
 
+### Justerbar prioritering (Inställningar-fliken)
+De fem mjuka kriterierna ovan (golfbilsdelning, kvinnor ihop, starttidspreferens, undvik långsamma ihop, rotation/variation) går att ändra i en egen Inställningar-flik:
+
+- **Ordning** — admin kan flytta kriterierna upp/ner för att ändra prioritetsordningen mellan dem. Standardordningen är den som listas ovan.
+- **Gör till hårt krav** — vart och ett av de fem kan istället flaggas som ett hårt krav. Ett kriterium som flaggas så flyttas till samma nivå som handicaptaket och spelarrelationerna (avsnitt 4.1) — brott mot det blockerar då sparning på samma sätt (se avsnitt 6). De hårda kriterierna (handicaptak, spelarrelationer) kan däremot inte göras mjuka.
+- Ändringar sparas lokalt och gäller tills de ändras igen. Standardvärdet (innan admin ändrat något) motsvarar exakt ordningen och hård/mjuk-indelningen ovan, så beteendet är oförändrat tills admin aktivt gör något val i Inställningar.
+
 ## 5. Output
 
 För varje spelvecka: en lista av flighter, där varje flight visar vilka spelare som ingår, samt (för spårbarhet) flight-summan av handicap.
