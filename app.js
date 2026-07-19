@@ -2,6 +2,14 @@ const STORAGE_KEY = "golf-players";
 
 let players = loadPlayers();
 let editingId = null;
+let editingRelations = []; // arbetslista medan sheeten är öppen: [{ playerId, type }]
+
+const RELATION_TYPE_LABELS = {
+  always: "Alltid tillsammans",
+  never: "Aldrig tillsammans",
+  before: "Startar före",
+  after: "Startar efter",
+};
 
 const playerList = document.getElementById("player-list");
 const emptyState = document.getElementById("empty-state");
@@ -13,9 +21,12 @@ const sheetTitle = document.getElementById("sheet-title");
 const playerForm = document.getElementById("player-form");
 const fieldName = document.getElementById("field-name");
 const fieldHandicap = document.getElementById("field-handicap");
-const fieldAlwaysList = document.getElementById("field-always-list");
-const fieldNeverList = document.getElementById("field-never-list");
-const fieldBeforeList = document.getElementById("field-before-list");
+const fieldRelationsList = document.getElementById("field-relations-list");
+const relationAddRow = document.getElementById("relation-add-row");
+const relationAddPlayer = document.getElementById("relation-add-player");
+const relationAddType = document.getElementById("relation-add-type");
+const relationAddConfirm = document.getElementById("relation-add-confirm");
+const relationAddCancel = document.getElementById("relation-add-cancel");
 const fieldSlow = document.getElementById("field-slow");
 const fieldCart = document.getElementById("field-cart");
 const fieldTimePreference = document.getElementById("field-time-preference");
@@ -95,9 +106,23 @@ function findPlayer(id) {
   return players.find((p) => p.id === id) || null;
 }
 
-function relationBadgeText(label, ids) {
-  const names = ids.map((id) => findPlayer(id)?.name).filter(Boolean);
-  return names.length ? `${label}: ${names.join(", ")}` : null;
+// Slår ihop en spelares egna relationslistor med de "startar efter"-relationer
+// som andra spelare har satt mot denna spelare (startsBefore är riktad och
+// sparas bara på den som startar tidigare, så "efter" måste härledas).
+function getPlayerRelations(playerId) {
+  const player = findPlayer(playerId);
+  if (!player) return [];
+  const relations = [];
+  for (const id of player.alwaysWith || []) relations.push({ playerId: id, type: "always" });
+  for (const id of player.neverWith || []) relations.push({ playerId: id, type: "never" });
+  for (const id of player.startsBefore || []) relations.push({ playerId: id, type: "before" });
+  for (const other of players) {
+    if (other.id === playerId) continue;
+    if ((other.startsBefore || []).includes(playerId)) {
+      relations.push({ playerId: other.id, type: "after" });
+    }
+  }
+  return relations;
 }
 
 function render() {
@@ -121,25 +146,17 @@ function render() {
     const badges = document.createElement("div");
     badges.className = "player-badges";
 
-    const alwaysText = relationBadgeText("Alltid med", player.alwaysWith || []);
-    if (alwaysText) {
-      const b = document.createElement("span");
-      b.className = "badge badge-always";
-      b.textContent = alwaysText;
-      badges.appendChild(b);
+    const grouped = { always: [], never: [], before: [], after: [] };
+    for (const rel of getPlayerRelations(player.id)) {
+      const other = findPlayer(rel.playerId);
+      if (other) grouped[rel.type].push(other.name);
     }
-    const neverText = relationBadgeText("Aldrig med", player.neverWith || []);
-    if (neverText) {
+    const badgeClasses = { always: "badge-always", never: "badge-never", before: "badge-before", after: "badge-after" };
+    for (const type of ["always", "never", "before", "after"]) {
+      if (grouped[type].length === 0) continue;
       const b = document.createElement("span");
-      b.className = "badge badge-never";
-      b.textContent = neverText;
-      badges.appendChild(b);
-    }
-    const beforeText = relationBadgeText("Startar före", player.startsBefore || []);
-    if (beforeText) {
-      const b = document.createElement("span");
-      b.className = "badge badge-before";
-      b.textContent = beforeText;
+      b.className = `badge ${badgeClasses[type]}`;
+      b.textContent = `${RELATION_TYPE_LABELS[type]}: ${grouped[type].join(", ")}`;
       badges.appendChild(b);
     }
     if (player.slow) {
@@ -182,48 +199,91 @@ function render() {
   playerCount.textContent = players.length === 1 ? "1 spelare" : `${players.length} spelare`;
 }
 
-function populateRelationChecklist(listEl, selectedIds, excludeId) {
-  listEl.innerHTML = "";
-  const sorted = [...players].sort((a, b) => a.name.localeCompare(b.name, "sv"));
-  for (const player of sorted) {
-    if (player.id === excludeId) continue;
+function renderRelationsList() {
+  fieldRelationsList.innerHTML = "";
+  const sorted = [...editingRelations].sort((a, b) => {
+    const na = findPlayer(a.playerId)?.name || "";
+    const nb = findPlayer(b.playerId)?.name || "";
+    return na.localeCompare(nb, "sv");
+  });
+
+  for (const rel of sorted) {
+    const player = findPlayer(rel.playerId);
+    if (!player) continue;
     const li = document.createElement("li");
-    li.className = "relation-item";
+    li.className = "relation-rule-item";
 
-    const checkbox = document.createElement("input");
-    checkbox.type = "checkbox";
-    checkbox.value = player.id;
-    checkbox.checked = selectedIds.includes(player.id);
+    const label = document.createElement("span");
+    label.className = "relation-rule-label";
+    label.textContent = `${player.name} — ${RELATION_TYPE_LABELS[rel.type]}`;
 
-    const name = document.createElement("span");
-    name.className = "relation-name";
-    name.textContent = player.name;
-
-    li.appendChild(checkbox);
-    li.appendChild(name);
-    li.addEventListener("click", (e) => {
-      if (e.target !== checkbox) checkbox.click();
+    const removeBtn = document.createElement("button");
+    removeBtn.type = "button";
+    removeBtn.className = "relation-remove-btn";
+    removeBtn.textContent = "×";
+    removeBtn.setAttribute("aria-label", `Ta bort regel för ${player.name}`);
+    removeBtn.addEventListener("click", () => {
+      editingRelations = editingRelations.filter((r) => r !== rel);
+      renderRelationsList();
     });
-    listEl.appendChild(li);
+
+    li.appendChild(label);
+    li.appendChild(removeBtn);
+    fieldRelationsList.appendChild(li);
   }
+
+  const addChip = document.createElement("li");
+  addChip.className = "relation-rule-item relation-rule-add";
+  addChip.textContent = "+";
+  addChip.setAttribute("role", "button");
+  addChip.tabIndex = 0;
+  addChip.addEventListener("click", () => openRelationAddRow());
+  fieldRelationsList.appendChild(addChip);
 }
 
-function getCheckedIds(listEl) {
-  return Array.from(listEl.querySelectorAll("input[type=checkbox]:checked")).map((cb) => cb.value);
+function openRelationAddRow() {
+  const usedIds = new Set(editingRelations.map((r) => r.playerId));
+  const sorted = [...players].sort((a, b) => a.name.localeCompare(b.name, "sv"));
+  const available = sorted.filter((p) => p.id !== editingId && !usedIds.has(p.id));
+
+  relationAddPlayer.innerHTML = "";
+  for (const player of available) {
+    const option = document.createElement("option");
+    option.value = player.id;
+    option.textContent = player.name;
+    relationAddPlayer.appendChild(option);
+  }
+
+  if (available.length === 0) {
+    alert("Alla andra spelare har redan en regel mot den här spelaren.");
+    return;
+  }
+
+  relationAddType.value = "always";
+  relationAddRow.hidden = false;
 }
 
-function populateAllRelationLists(selected, excludeId) {
-  populateRelationChecklist(fieldAlwaysList, selected.always, excludeId);
-  populateRelationChecklist(fieldNeverList, selected.never, excludeId);
-  populateRelationChecklist(fieldBeforeList, selected.before, excludeId);
-}
+relationAddConfirm.addEventListener("click", () => {
+  const playerId = relationAddPlayer.value;
+  const type = relationAddType.value;
+  if (!playerId) return;
+  editingRelations.push({ playerId, type });
+  relationAddRow.hidden = true;
+  renderRelationsList();
+});
+
+relationAddCancel.addEventListener("click", () => {
+  relationAddRow.hidden = true;
+});
 
 function openAddSheet() {
   editingId = null;
   sheetTitle.textContent = "Ny spelare";
   deleteBtn.hidden = true;
   playerForm.reset();
-  populateAllRelationLists({ always: [], never: [], before: [] }, null);
+  editingRelations = [];
+  relationAddRow.hidden = true;
+  renderRelationsList();
   fieldTimePreference.value = "none";
   showSheet();
 }
@@ -236,10 +296,9 @@ function openEditSheet(id) {
   deleteBtn.hidden = false;
   fieldName.value = player.name;
   fieldHandicap.value = player.handicap;
-  populateAllRelationLists(
-    { always: player.alwaysWith || [], never: player.neverWith || [], before: player.startsBefore || [] },
-    id
-  );
+  editingRelations = getPlayerRelations(id);
+  relationAddRow.hidden = true;
+  renderRelationsList();
   fieldSlow.checked = !!player.slow;
   fieldCart.checked = !!player.cart;
   fieldTimePreference.value = player.timePreference || "none";
@@ -257,9 +316,14 @@ function hideSheet() {
 }
 
 // Alltid/aldrig tillsammans är ömsesidiga relationer och speglas på båda spelarna.
-// Startar-före är riktad och sparas bara på den spelare som startar tidigare.
-function applyRelations(playerId, newAlways, newNever, newBefore) {
+// Startar-före är riktad och sparas bara på den spelare som startar tidigare, så
+// "startar efter"-regler i arbetslistan skrivs som ett before-värde på motparten.
+function applyRelations(playerId, relations) {
   const player = findPlayer(playerId);
+  const newAlways = relations.filter((r) => r.type === "always").map((r) => r.playerId);
+  const newNever = relations.filter((r) => r.type === "never").map((r) => r.playerId);
+  const newBefore = relations.filter((r) => r.type === "before").map((r) => r.playerId);
+  const newAfterTargets = relations.filter((r) => r.type === "after").map((r) => r.playerId);
 
   for (const otherId of player.alwaysWith) {
     if (!newAlways.includes(otherId)) {
@@ -286,6 +350,14 @@ function applyRelations(playerId, newAlways, newNever, newBefore) {
   player.neverWith = [...newNever];
 
   player.startsBefore = [...newBefore];
+
+  for (const other of players) {
+    if (other.id === playerId) continue;
+    const shouldHave = newAfterTargets.includes(other.id);
+    const has = other.startsBefore.includes(playerId);
+    if (shouldHave && !has) other.startsBefore.push(playerId);
+    if (!shouldHave && has) removeId(other.startsBefore, playerId);
+  }
 }
 
 playerForm.addEventListener("submit", (e) => {
@@ -299,21 +371,6 @@ playerForm.addEventListener("submit", (e) => {
   if (!name || Number.isNaN(handicap)) return;
 
   const id = editingId || crypto.randomUUID();
-  const always = getCheckedIds(fieldAlwaysList);
-  const never = getCheckedIds(fieldNeverList);
-  const before = getCheckedIds(fieldBeforeList);
-
-  const overlapId = always.find((pid) => never.includes(pid) || before.includes(pid)) || never.find((pid) => before.includes(pid));
-  if (overlapId) {
-    alert(`${findPlayer(overlapId)?.name || "En spelare"} kan bara ha en relationstyp (alltid/aldrig/startar före) mot samma spelare.`);
-    return;
-  }
-
-  const cycleId = before.find((pid) => findPlayer(pid)?.startsBefore.includes(id));
-  if (cycleId) {
-    alert(`${findPlayer(cycleId).name} har redan "startar före" satt mot den här spelaren — kan inte gälla åt båda hållen.`);
-    return;
-  }
 
   if (editingId) {
     const player = findPlayer(editingId);
@@ -326,7 +383,7 @@ playerForm.addEventListener("submit", (e) => {
     players.push({ id, name, handicap, alwaysWith: [], neverWith: [], startsBefore: [], slow, cart, timePreference });
   }
 
-  applyRelations(id, always, never, before);
+  applyRelations(id, editingRelations);
 
   savePlayers();
   render();

@@ -101,18 +101,21 @@
         </label>
 
         <div class="field">
-          <span>Alltid tillsammans med</span>
-          <ul id="field-always-list" class="relation-list"></ul>
-        </div>
-
-        <div class="field">
-          <span>Aldrig tillsammans med</span>
-          <ul id="field-never-list" class="relation-list"></ul>
-        </div>
-
-        <div class="field">
-          <span>Startar före</span>
-          <ul id="field-before-list" class="relation-list"></ul>
+          <span>Spelarregler</span>
+          <ul id="field-relations-list" class="relation-rule-list"></ul>
+          <div id="relation-add-row" class="relation-add-row" hidden>
+            <select id="relation-add-player"></select>
+            <select id="relation-add-type">
+              <option value="always">Alltid tillsammans</option>
+              <option value="never">Aldrig tillsammans</option>
+              <option value="before">Startar före</option>
+              <option value="after">Startar efter</option>
+            </select>
+            <div class="relation-add-actions">
+              <button type="button" id="relation-add-cancel" class="btn-link">Avbryt</button>
+              <button type="button" id="relation-add-confirm" class="btn btn-secondary">Lägg till</button>
+            </div>
+          </div>
         </div>
 
         <label class="field field-toggle">

@@ -18,6 +18,8 @@
   --badge-never-text: #b3265e;
   --badge-before-bg: #e6f7f5;
   --badge-before-text: #0f766e;
+  --badge-after-bg: #f5ecfa;
+  --badge-after-text: #7c3aed;
   --badge-early-bg: #fef3e6;
   --badge-early-text: #b25e09;
   --badge-late-bg: #e8eefc;
@@ -46,6 +48,8 @@
     --badge-never-text: #ff8fc0;
     --badge-before-bg: #123a37;
     --badge-before-text: #5eead4;
+    --badge-after-bg: #2c1f3d;
+    --badge-after-text: #c9a6f5;
     --badge-early-bg: #3a2c18;
     --badge-early-text: #f5b56a;
     --badge-late-bg: #182338;
@@ -197,6 +201,11 @@ main {
   color: var(--badge-before-text);
 }
 
+.badge-after {
+  background: var(--badge-after-bg);
+  color: var(--badge-after-text);
+}
+
 .badge-early {
   background: var(--badge-early-bg);
   color: var(--badge-early-text);
@@ -343,40 +352,80 @@ main {
   min-height: 44px;
 }
 
-.relation-list {
+.relation-rule-list {
   list-style: none;
   margin: 0;
   padding: 0;
-  max-height: 160px;
-  overflow-y: auto;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.relation-rule-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 12px;
+  min-height: 36px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--surface);
+  font-size: 14px;
+  color: var(--text);
+}
+
+.relation-remove-btn {
+  appearance: none;
+  border: none;
+  background: none;
+  color: var(--text-secondary);
+  font-size: 16px;
+  line-height: 1;
+  cursor: pointer;
+  padding: 0;
+  min-width: 18px;
+}
+
+.relation-rule-add {
+  cursor: pointer;
+  justify-content: center;
+  min-width: 36px;
+  padding: 8px 14px;
+  border-style: dashed;
+  color: var(--accent);
+  font-size: 18px;
+  font-weight: 700;
+}
+
+.relation-add-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 10px;
+  padding: 12px;
   border: 1px solid var(--border);
   border-radius: 10px;
   background: var(--surface);
 }
 
-.relation-item {
+.relation-add-row select {
+  flex: 1;
+  min-width: 140px;
+  font-size: 15px;
+  color: var(--text);
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 10px 12px;
+  min-height: 40px;
+}
+
+.relation-add-actions {
   display: flex;
   align-items: center;
   gap: 12px;
-  padding: 9px 12px;
-  min-height: 40px;
-  border-bottom: 1px solid var(--border);
-  cursor: pointer;
-}
-
-.relation-item:last-child {
-  border-bottom: none;
-}
-
-.relation-item input[type="checkbox"] {
-  width: 20px;
-  height: 20px;
-  flex-shrink: 0;
-}
-
-.relation-name {
-  font-size: 15px;
-  color: var(--text);
+  width: 100%;
+  justify-content: flex-end;
 }
 
 .field-toggle {
