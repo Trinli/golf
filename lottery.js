@@ -89,6 +89,7 @@ function evaluate(groupOf, attendees, groupSizes, pairHistory) {
 
   let hardViolations = 0;
   let cartPenalty = 0;
+  let genderPenalty = 0;
   let timePreferencePenalty = 0;
   let slowPenalty = 0;
   let repeatPenalty = 0;
@@ -111,6 +112,9 @@ function evaluate(groupOf, attendees, groupSizes, pairHistory) {
 
     const cartCount = group.filter((i) => attendees[i].cart).length;
     if (cartCount % 2 === 1) cartPenalty += 1;
+
+    const womenCount = group.filter((i) => attendees[i].gender === "kvinna").length;
+    if (womenCount % 2 === 1) genderPenalty += 1;
 
     const slowCount = group.filter((i) => attendees[i].slow).length;
     if (slowCount > 1) slowPenalty += slowCount - 1;
@@ -146,11 +150,12 @@ function evaluate(groupOf, attendees, groupSizes, pairHistory) {
 
   const total =
     hardViolations * 1_000_000 +
-    cartPenalty * 10_000 +
+    cartPenalty * 100_000 +
+    genderPenalty * 10_000 +
     timePreferencePenalty * 1_000 +
     slowPenalty * 100 +
     repeatPenalty;
-  return { total, hardViolations, cartPenalty, timePreferencePenalty, slowPenalty, repeatPenalty };
+  return { total, hardViolations, cartPenalty, genderPenalty, timePreferencePenalty, slowPenalty, repeatPenalty };
 }
 
 function getViolatingPlayerIds(attendees, groupOf) {

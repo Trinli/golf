@@ -22,6 +22,8 @@
   --badge-after-text: #7c3aed;
   --badge-near-bg: #f6f0e4;
   --badge-near-text: #8a6210;
+  --badge-gender-bg: #fce7f3;
+  --badge-gender-text: #9d174d;
   --badge-early-bg: #fef3e6;
   --badge-early-text: #b25e09;
   --badge-late-bg: #e8eefc;
@@ -54,6 +56,8 @@
     --badge-after-text: #c9a6f5;
     --badge-near-bg: #332a14;
     --badge-near-text: #e0b95c;
+    --badge-gender-bg: #3a1a2b;
+    --badge-gender-text: #f472b6;
     --badge-early-bg: #3a2c18;
     --badge-early-text: #f5b56a;
     --badge-late-bg: #182338;
@@ -213,6 +217,11 @@ main {
 .badge-near {
   background: var(--badge-near-bg);
   color: var(--badge-near-text);
+}
+
+.badge-gender {
+  background: var(--badge-gender-bg);
+  color: var(--badge-gender-text);
 }
 
 .badge-early {

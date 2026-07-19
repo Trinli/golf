@@ -36,6 +36,7 @@ Detta dokument beskriver **vad** programmet ska göra, inte hur det ska byggas (
   Samma par av spelare kan bara ha en av dessa fyra relationstyper mellan sig åt gången (t.ex. inte både "alltid tillsammans" och "aldrig tillsammans" mellan samma två spelare).
 - Flagga: "långsam spelare" (manuellt satt av admin)
 - Flagga: "behöver golfbil" (manuellt satt av admin)
+- Kön (manuellt satt av admin): **Man** (standard) / **Kvinna** — används för preferensen om att gruppera kvinnliga spelare parvis (avsnitt 4.2)
 - Starttidspreferens (manuellt satt av admin): **Ingen preferens** (standard) / **Vill starta tidigt** / **Vill starta sent** — spelaren bör hamna i en av de tidigare respektive senare flighterna
 
 Not: "Behöver golfbil" avser golfbil (cart) under rundan, inte skjuts till banan. Alla spelare kan köra en golfbil, så det räcker med en flagga per spelare — ingen separat "kan köra"-flagga behövs.
@@ -65,14 +66,15 @@ Om lottningen inte kan uppfylla samtliga hårda krav samtidigt (t.ex. om handica
 Vid konflikt mellan mjuka krav gäller denna ordning, högst prioritet först:
 
 1. **Golfbilsdelning** — spelare flaggade "behöver golfbil" ska grupperas parvis (2 och 2) inom samma flight så de kan dela bil.
-2. **Starttidspreferens** — spelare med preferensen "vill starta tidigt" bör hamna i en av de tidigare flighterna, och spelare med "vill starta sent" bör hamna i en av de senare flighterna.
-3. **Undvik långsamma spelare ihop** — flighter bör inte innehålla fler än en spelare flaggad som "långsam", om det går att undvika.
-4. **Rotation / variation** — lottningen ska minimera antalet gånger samma två spelare hamnar i samma flight, sett över säsongens historik. Om flera lottningar uppfyller kraven ovan lika bra väljs den som ger mest variation jämfört med tidigare veckor.
+2. **Kvinnor ihop** — kvinnliga spelare bör grupperas parvis (2 och 2) inom samma flight, så att två kvinnor spelar tillsammans och den tredje platsen i flighten helst går till en man. En flight med ett udda antal kvinnor (t.ex. en ensam kvinna, eller tre kvinnor istället för två) undviks om det går.
+3. **Starttidspreferens** — spelare med preferensen "vill starta tidigt" bör hamna i en av de tidigare flighterna, och spelare med "vill starta sent" bör hamna i en av de senare flighterna.
+4. **Undvik långsamma spelare ihop** — flighter bör inte innehålla fler än en spelare flaggad som "långsam", om det går att undvika.
+5. **Rotation / variation** — lottningen ska minimera antalet gånger samma två spelare hamnar i samma flight, sett över säsongens historik. Om flera lottningar uppfyller kraven ovan lika bra väljs den som ger mest variation jämfört med tidigare veckor.
 
 Fullständig prioritetsordning vid konflikt (hög till låg):
-**Aldrig/alltid tillsammans / startordning / flightavstånd → Handicaptak → Golfbilsdelning → Starttidspreferens → Undvik långsamma ihop → Rotation/variation**
+**Aldrig/alltid tillsammans / startordning / flightavstånd → Handicaptak → Golfbilsdelning → Kvinnor ihop → Starttidspreferens → Undvik långsamma ihop → Rotation/variation**
 
-De fem första (spelarrelationerna och handicaptaket) är absoluta krav och får aldrig kompromissas. De fyra sista löses i angiven ordning — om det är omöjligt att uppfylla alla samtidigt prioriteras det som står högst.
+De fem första (spelarrelationerna och handicaptaket) är absoluta krav och får aldrig kompromissas. De fem sista löses i angiven ordning — om det är omöjligt att uppfylla alla samtidigt prioriteras det som står högst.
 
 ## 5. Output
 

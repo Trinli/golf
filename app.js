@@ -23,6 +23,7 @@ const sheetTitle = document.getElementById("sheet-title");
 const playerForm = document.getElementById("player-form");
 const fieldName = document.getElementById("field-name");
 const fieldHandicap = document.getElementById("field-handicap");
+const fieldGender = document.getElementById("field-gender");
 const fieldRelationsList = document.getElementById("field-relations-list");
 const relationAddRow = document.getElementById("relation-add-row");
 const relationAddPlayer = document.getElementById("relation-add-player");
@@ -70,6 +71,7 @@ function migrateLegacySpouseData(loaded) {
     if (!player.neverWith) player.neverWith = [];
     if (!player.startsBefore) player.startsBefore = [];
     if (!player.nearWith) player.nearWith = [];
+    if (!player.gender) player.gender = "man";
   }
 
   const hasLegacy = loaded.some((p) => "spouseId" in p);
@@ -162,6 +164,12 @@ function render() {
       const b = document.createElement("span");
       b.className = `badge ${badgeClasses[type]}`;
       b.textContent = `${RELATION_TYPE_LABELS[type]}: ${grouped[type].join(", ")}`;
+      badges.appendChild(b);
+    }
+    if (player.gender === "kvinna") {
+      const b = document.createElement("span");
+      b.className = "badge badge-gender";
+      b.textContent = "Kvinna";
       badges.appendChild(b);
     }
     if (player.slow) {
@@ -305,6 +313,7 @@ function openAddSheet() {
   editingRelations = [];
   relationAddRow.hidden = true;
   renderRelationsList();
+  fieldGender.value = "man";
   fieldTimePreference.value = "none";
   showSheet();
 }
@@ -322,6 +331,7 @@ function openEditSheet(id) {
   renderRelationsList();
   fieldSlow.checked = !!player.slow;
   fieldCart.checked = !!player.cart;
+  fieldGender.value = player.gender || "man";
   fieldTimePreference.value = player.timePreference || "none";
   showSheet();
 }
@@ -367,6 +377,7 @@ function getOrCreateEditingPlayer() {
     nearWith: [],
     slow: fieldSlow.checked,
     cart: fieldCart.checked,
+    gender: fieldGender.value,
     timePreference: fieldTimePreference.value,
   });
   editingId = id;
@@ -473,6 +484,12 @@ fieldCart.addEventListener("change", () => {
 fieldTimePreference.addEventListener("change", () => {
   saveField((player) => {
     player.timePreference = fieldTimePreference.value;
+  });
+});
+
+fieldGender.addEventListener("change", () => {
+  saveField((player) => {
+    player.gender = fieldGender.value;
   });
 });
 
