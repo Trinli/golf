@@ -713,6 +713,32 @@ main {
   margin-top: 4px;
 }
 
+.variation-summary {
+  margin: 14px 0 0;
+  padding: 12px 14px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--surface);
+}
+
+.variation-headline {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.variation-repeat-list {
+  list-style: none;
+  margin: 8px 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
 .hint {
   font-size: 13px;
   color: var(--text-secondary);
@@ -782,9 +808,21 @@ main {
 }
 
 .history-flights {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
   font-size: 13px;
   color: var(--text-secondary);
-  line-height: 1.6;
+  line-height: 1.5;
+}
+
+.history-flight-label {
+  font-weight: 600;
+  color: var(--text);
+  margin-right: 6px;
 }
 
 /* Settings / priority configuration */

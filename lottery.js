@@ -44,6 +44,7 @@ const generateBtn = document.getElementById("generate-btn");
 const lotteryResult = document.getElementById("lottery-result");
 const lotteryBanner = document.getElementById("lottery-banner");
 const flightContainer = document.getElementById("flight-container");
+const variationSummaryEl = document.getElementById("variation-summary");
 const rerollBtn = document.getElementById("reroll-btn");
 const mailBtn = document.getElementById("mail-btn");
 const saveWeekBtn = document.getElementById("save-week-btn");
@@ -110,6 +111,35 @@ function buildPairHistory() {
     }
   }
   return map;
+}
+
+// Slår upp hur många av veckans par som är nya respektive återkommande jämfört
+// med tidigare sparade veckor, för visning i variationsöversikten. Körs en
+// gång per renderResult()-anrop — hålls separat från evaluate() (som kör detta
+// ~40 000 gånger per lottning via optimize()) för att inte belasta sökningen.
+function computePairStats(groups, attendees, pairHistory) {
+  const repeatPairs = [];
+  let totalPairs = 0;
+  let newPairs = 0;
+
+  for (const group of groups) {
+    for (let a = 0; a < group.length; a++) {
+      for (let b = a + 1; b < group.length; b++) {
+        const p1 = attendees[group[a]];
+        const p2 = attendees[group[b]];
+        const count = pairHistory.get(pairKey(p1.id, p2.id)) || 0;
+        totalPairs += 1;
+        if (count === 0) newPairs += 1;
+        else repeatPairs.push({ name1: p1.name, name2: p2.name, count });
+      }
+    }
+  }
+
+  repeatPairs.sort(
+    (x, y) => y.count - x.count || `${x.name1}${x.name2}`.localeCompare(`${y.name1}${y.name2}`, "sv")
+  );
+
+  return { totalPairs, newPairs, repeatPairs };
 }
 
 function computeGroupSizes(n) {
@@ -514,7 +544,8 @@ function runGeneration() {
 function renderResult() {
   if (!currentResult) return;
   const { attendees, groupSizes, groupOf } = currentResult;
-  const stats = evaluate(groupOf, attendees, groupSizes, buildPairHistory());
+  const pairHistory = buildPairHistory();
+  const stats = evaluate(groupOf, attendees, groupSizes, pairHistory);
 
   lotteryResult.hidden = false;
   flightContainer.innerHTML = "";
@@ -612,6 +643,8 @@ function renderResult() {
     flightContainer.appendChild(card);
   });
 
+  renderVariationSummary(computePairStats(groups, attendees, pairHistory));
+
   if (stats.hardViolations > 0) {
     lotteryBanner.hidden = false;
     lotteryBanner.textContent =
@@ -620,6 +653,38 @@ function renderResult() {
   } else {
     lotteryBanner.hidden = true;
     saveWeekBtn.disabled = false;
+  }
+}
+
+// Visar hur många av veckans par som är nya respektive återkommande jämfört
+// med tidigare sparade veckor. Döljs helt om ingen historik finns än, eftersom
+// talet vore meningslöst utan något att jämföra med.
+function renderVariationSummary(summary) {
+  if (weeks.length === 0) {
+    variationSummaryEl.hidden = true;
+    return;
+  }
+  variationSummaryEl.hidden = false;
+  variationSummaryEl.innerHTML = "";
+
+  const headline = document.createElement("p");
+  headline.className = "variation-headline";
+  headline.textContent =
+    summary.repeatPairs.length === 0
+      ? `Alla ${summary.totalPairs} par är nya denna vecka jämfört med tidigare veckor.`
+      : `${summary.newPairs} av ${summary.totalPairs} par är nya denna vecka, ${summary.repeatPairs.length} par har spelat ihop förut.`;
+  variationSummaryEl.appendChild(headline);
+
+  if (summary.repeatPairs.length > 0) {
+    const list = document.createElement("ul");
+    list.className = "variation-repeat-list";
+    for (const pair of summary.repeatPairs) {
+      const li = document.createElement("li");
+      const times = pair.count === 1 ? "1 gång" : `${pair.count} gånger`;
+      li.textContent = `${pair.name1} & ${pair.name2} — spelat ihop ${times} tidigare`;
+      list.appendChild(li);
+    }
+    variationSummaryEl.appendChild(list);
   }
 }
 
@@ -732,12 +797,25 @@ function renderHistory() {
     header.appendChild(deleteBtn);
     li.appendChild(header);
 
-    const flightsEl = document.createElement("div");
-    flightsEl.className = "history-flights";
-    flightsEl.textContent = week.flights
-      .map((flight) => flight.map((id) => findPlayer(id)?.name || "?").join(", "))
-      .join(" · ");
-    li.appendChild(flightsEl);
+    const flightsList = document.createElement("ul");
+    flightsList.className = "history-flights";
+    week.flights.forEach((flight, index) => {
+      const row = document.createElement("li");
+      row.className = "history-flight-row";
+
+      const label = document.createElement("span");
+      label.className = "history-flight-label";
+      label.textContent = `Flight ${index + 1}`;
+
+      const names = document.createElement("span");
+      names.className = "history-flight-names";
+      names.textContent = flight.map((id) => findPlayer(id)?.name || "?").join(", ");
+
+      row.appendChild(label);
+      row.appendChild(names);
+      flightsList.appendChild(row);
+    });
+    li.appendChild(flightsList);
 
     historyList.appendChild(li);
   }

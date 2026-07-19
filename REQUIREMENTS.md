@@ -110,6 +110,10 @@ Starttiden för den första flighten väljs av användaren i lottningsfliken (et
 
 Vid val av vilka spelare som deltar en given vecka (i lottningsfliken) ska gränssnittet visa hur många spelare som är valda, i formatet "X av Y valda" (X = antal markerade denna vecka, Y = totalt antal spelare i registret), t.ex. "Deltagare denna vecka (14 av 28 valda)". Antalet ska uppdateras direkt när en spelare markeras eller avmarkeras (inklusive vid "Markera alla" / "Avmarkera alla").
 
+### Variation mot tidigare veckor
+
+Efter en lottning ska gränssnittet visa en kort sammanfattning av hur mycket den skiljer sig från tidigare sparade veckor: hur många av veckans spelarpar (två spelare i samma flight) som är nya jämfört med säsongens historik, och hur många som har spelat ihop tidigare — med angivet vilka spelare det gäller och hur många gånger. Sammanfattningen bygger på samma historikdata som rotationskriteriet i avsnitt 4.2 och uppdateras direkt vid varje ny lottning, omslumpning eller manuellt platsbyte. Om inga tidigare veckor är sparade ännu visas ingen sammanfattning.
+
 ## 6. Beslutade edge cases
 
 - **Ojämnt antal anmälda**: Om antalet anmälda inte är jämnt delbart med 3 skapas en flight med 4 spelare (om resten är 1) eller en flight med 2 spelare (om resten är 2), övriga flighter har 3 spelare.
