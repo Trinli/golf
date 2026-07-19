@@ -33,7 +33,9 @@ Detta dokument beskriver **vad** programmet ska göra, inte hur det ska byggas (
   - **Startar före** — dessa spelare ska denna spelare alltid hamna i en tidigare flight än (motsatsen, "startar efter", gäller automatiskt för den andra spelaren i relationen)
   - **Inom tre flighter** — dessa spelare får aldrig hamna mer än 3 flighter (flight-nummer) ifrån denna spelare (ömsesidigt — gäller automatiskt åt båda hållen). T.ex. Flight 1 och Flight 4 är tillåtet (skillnad 3), Flight 1 och Flight 5 är det inte.
 
-  Samma par av spelare kan bara ha en av dessa fyra relationstyper mellan sig åt gången (t.ex. inte både "alltid tillsammans" och "aldrig tillsammans" mellan samma två spelare).
+  Relationstyperna delas in i två oberoende grupper som gäller per spelarpar:
+  - **Ordning** — alltid tillsammans / aldrig tillsammans / startar före / startar efter. Ett par kan bara ha *en* av dessa fyra mellan sig åt gången (t.ex. inte både "alltid tillsammans" och "aldrig tillsammans" mellan samma två spelare).
+  - **Avstånd** — inom tre flighter. Fristående från ordningsgruppen, och kan därför kombineras fritt med aldrig tillsammans, startar före eller startar efter mellan samma par (t.ex. "aldrig i samma flight, men ändå inom tre flighter av varandra"). Kan inte kombineras med "alltid tillsammans" (överflödigt, eftersom alltid tillsammans redan innebär avstånd noll).
 - Flagga: "långsam spelare" (manuellt satt av admin)
 - Flagga: "behöver golfbil" (manuellt satt av admin)
 - Kön (manuellt satt av admin): **Man** (standard) / **Kvinna** — används för preferensen om att gruppera kvinnliga spelare parvis (avsnitt 4.2)

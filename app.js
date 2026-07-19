@@ -267,10 +267,48 @@ function renderRelationsList() {
   fieldRelationsList.appendChild(addChip);
 }
 
+// "Alltid tillsammans" utesluter alla andra typer mot samma spelare (och tvärtom).
+// "Aldrig tillsammans"/"Startar före"/"Startar efter" utesluter varandra inbördes
+// (kan bara vara EN av dem mot en given spelare), men kan fritt kombineras med
+// "Inom tre flighter", som är en oberoende regel om avstånd, inte om ordning.
+const ORDERING_TYPES = ["always", "never", "before", "after"];
+
+function getRelationTypesFor(targetId) {
+  return editingRelations.filter((r) => r.playerId === targetId).map((r) => r.type);
+}
+
+function isPlayerFullyUsed(targetId) {
+  const types = getRelationTypesFor(targetId);
+  if (types.includes("always")) return true;
+  const hasOrdering = types.some((t) => ORDERING_TYPES.includes(t));
+  const hasNear = types.includes("near");
+  return hasOrdering && hasNear;
+}
+
+function isTypeConflicting(type, existingTypes) {
+  if (existingTypes.includes(type)) return true;
+  if (type === "always") return existingTypes.length > 0;
+  if (ORDERING_TYPES.includes(type)) return existingTypes.some((t) => ORDERING_TYPES.includes(t));
+  if (type === "near") return existingTypes.includes("always");
+  return false;
+}
+
+function updateRelationTypeOptions() {
+  const existingTypes = getRelationTypesFor(relationAddPlayer.value);
+  const options = Array.from(relationAddType.querySelectorAll("option"));
+  for (const option of options) {
+    option.disabled = isTypeConflicting(option.value, existingTypes);
+  }
+  const selected = options.find((o) => o.value === relationAddType.value);
+  if (!selected || selected.disabled) {
+    const firstEnabled = options.find((o) => !o.disabled);
+    if (firstEnabled) relationAddType.value = firstEnabled.value;
+  }
+}
+
 function openRelationAddRow() {
-  const usedIds = new Set(editingRelations.map((r) => r.playerId));
   const sorted = [...players].sort((a, b) => a.name.localeCompare(b.name, "sv"));
-  const available = sorted.filter((p) => p.id !== editingId && !usedIds.has(p.id));
+  const available = sorted.filter((p) => p.id !== editingId && !isPlayerFullyUsed(p.id));
 
   relationAddPlayer.innerHTML = "";
   for (const player of available) {
@@ -281,18 +319,21 @@ function openRelationAddRow() {
   }
 
   if (available.length === 0) {
-    alert("Alla andra spelare har redan en regel mot den här spelaren.");
+    alert("Alla andra spelare har redan alla möjliga regler mot den här spelaren.");
     return;
   }
 
-  relationAddType.value = "always";
+  updateRelationTypeOptions();
   relationAddRow.hidden = false;
 }
+
+relationAddPlayer.addEventListener("change", updateRelationTypeOptions);
 
 relationAddConfirm.addEventListener("click", () => {
   const playerId = relationAddPlayer.value;
   const type = relationAddType.value;
   if (!playerId) return;
+  if (isTypeConflicting(type, getRelationTypesFor(playerId))) return;
   editingRelations.push({ playerId, type });
   relationAddRow.hidden = true;
   applyRelations(editingId, editingRelations);
